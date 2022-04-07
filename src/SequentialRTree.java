@@ -77,17 +77,21 @@ public class SequentialRTree {
                 // add new point and existing left point in a new left child node of cur
                 Node newLeftChild = new Node();
                 newLeftChild.parent = curNode;
-                newLeftChild.leftEntry.upperTop = newPoint;
+                newLeftChild.leftEntry = new Entry();
                 newLeftChild.leftEntry.lowerBottom = curNode.leftEntry.lowerBottom;
+                newLeftChild.rightEntry = new Entry();
+                newLeftChild.rightEntry.lowerBottom = newPoint;
                 curNode.leftChild = newLeftChild;
                 curNode.leftEntry.upperTop = newPoint;
 
                 // add existing right point in new right child of cur
                 Node newRightChild = new Node();
                 newRightChild.parent = curNode;
+                newRightChild.leftEntry = new Entry();
                 newRightChild.leftEntry.lowerBottom = curNode.rightEntry.lowerBottom;
                 curNode.rightChild = newRightChild;
                 curNode.rightEntry.upperTop = curNode.rightEntry.lowerBottom;
+                cond=false;
             }
         }
         if(addition)
