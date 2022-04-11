@@ -9,10 +9,24 @@ import java.util.Random;
 
 class Entry {
     Point lowerBottom, upperTop;
-
+    Entry()
+    {
+        lowerBottom=null;
+        upperTop=null;
+    }
     public boolean isPoint() {
-        if (lowerBottom.x == upperTop.x && upperTop.y == lowerBottom.y) {
+        if (upperTop ==null) {
             return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(obj instanceof Entry) {
+            Entry object = (Entry) obj;
+            if (object.upperTop.equals(this.upperTop) && object.lowerBottom.equals(this.lowerBottom))
+                return true;
         }
         return false;
     }
@@ -35,82 +49,193 @@ class Entry {
         }
 
         public void add(Point newPoint) {
-            boolean addition = false;
+            boolean additionSuccessfull = false;
             if (newPoint == null)
                 return;
             if (root == null) {
                 Node newNode = new Node();
                 newNode.leftEntry = new Entry();
-                newNode.leftEntry.lowerBottom = newPoint;
+                newNode.leftEntry.lowerBottom = new Point(newPoint);
                 root = newNode;
+                additionSuccessfull= true;
+                System.out.println("Added new point - "+ newPoint.getX()+" "+newPoint.getY());
                 return;
             }
             Node curNode = root;
-            boolean cond = true;
-            while (cond) {
+            boolean traversal = true;
+            while (traversal) {
                 boolean emptyLeaf = false;
                 boolean fullLeaf = false;
                 boolean internal = false;
                 if (curNode == null) {
-                    cond = false;
+                    traversal = false;
                     continue;
                 }
                 if (curNode.leftEntry == null || curNode.rightEntry == null) {
                     emptyLeaf = true;
                 }
+                // In case of empty leaf, add a new point
                 if (emptyLeaf) {
                     if (curNode.leftEntry == null) {
                         curNode.leftEntry = new Entry();
-                        curNode.leftEntry.lowerBottom = newPoint;
+                        curNode.leftEntry.lowerBottom = new Point(newPoint);
                     } else {
                         curNode.rightEntry = new Entry();
-                        curNode.rightEntry.lowerBottom = newPoint;
+                        curNode.rightEntry.lowerBottom = new Point(newPoint);
                     }
-                    addition = true;
+                    additionSuccessfull = true;
                     break;
                 }
+                // check for a internal node or a full leaf
                 if (curNode.leftEntry != null && curNode.rightEntry != null) {
-                    if (curNode.leftEntry.upperTop != null || curNode.rightEntry.upperTop != null)
-                        internal = true;
-                    else
+                    // distinguish between internal node and a full leaf node using upperTop coordinates or using child links
+                    if (curNode.leftEntry.upperTop == null && curNode.rightEntry.upperTop == null)
                         fullLeaf = true;
+                    else
+                        internal=true;
                 }
                 if (internal) {
-                    Random random = new Random();
-                    int randInt = random.nextInt(2);
-                    System.out.println("Traversing while addition to side (0 or 1) : " + randInt);
-                    if (randInt % 2 == 0)
+                    int minSide = findMinMBRWhileAdd(newPoint, curNode);
+                    System.out.println("Traversing while addition to side (0 or 1) : " + minSide);
+                    if (minSide % 2 == 0)
                         curNode = curNode.leftChild;
                     else
                         curNode = curNode.rightChild;
                     continue;
                 }
                 if (fullLeaf) {
-                    // add new point and existing left point in a new left child node of cur
-                    Node newLeftChild = new Node();
-                    newLeftChild.parent = curNode;
-                    newLeftChild.leftEntry = new Entry();
-                    newLeftChild.leftEntry.lowerBottom = curNode.leftEntry.lowerBottom;
-                    newLeftChild.rightEntry = new Entry();
-                    newLeftChild.rightEntry.lowerBottom = newPoint;
-                    curNode.leftChild = newLeftChild;
-                    curNode.leftEntry.upperTop = newPoint;
+                    // add new point and existing nearest point in a new child node of current node
+                    long leftDist = calculatePointDistance(newPoint, curNode.leftEntry.lowerBottom);
+                    long righDist = calculatePointDistance(newPoint, curNode.rightEntry.lowerBottom);
 
-                    // add existing right point in new right child of cur
-                    Node newRightChild = new Node();
-                    newRightChild.parent = curNode;
-                    newRightChild.leftEntry = new Entry();
-                    newRightChild.leftEntry.lowerBottom = curNode.rightEntry.lowerBottom;
-                    curNode.rightChild = newRightChild;
-                    curNode.rightEntry.upperTop = curNode.rightEntry.lowerBottom;
-                    cond = false;
+                    // add existing left/right point and the new point in a left/right child of current node
+                    Node newCombinedChild = new Node();
+                    newCombinedChild.parent = curNode;
+
+                    newCombinedChild.leftEntry = new Entry();
+                    newCombinedChild.leftEntry.lowerBottom = new Point(leftDist<righDist ? curNode.leftEntry.lowerBottom : curNode.rightEntry.lowerBottom);
+
+                    newCombinedChild.rightEntry = new Entry();
+                    newCombinedChild.rightEntry.lowerBottom = new Point(newPoint);
+
+                    if(leftDist<righDist)
+                        curNode.leftChild = newCombinedChild;
+                    else
+                        curNode.rightChild = newCombinedChild;
+
+                    // add existing right/left point in new right/left child of current node
+                    Node newSingularChild = new Node();
+                    newSingularChild.parent = curNode;
+
+                    newSingularChild.leftEntry = new Entry();
+                    newSingularChild.leftEntry.lowerBottom = new Point(leftDist<righDist ? curNode.rightEntry.lowerBottom : curNode.leftEntry.lowerBottom);
+
+                    if(leftDist<righDist)
+                        curNode.rightChild = newSingularChild;
+                    else
+                        curNode.leftChild = newSingularChild;
+
+                    additionSuccessfull=true;
+                    traversal = false;
                 }
             }
-            if (addition) {
-                // update MBRs of all ancestors
-            }
-        }
 
+            if (additionSuccessfull) {
+                System.out.println("Added new point - "+ newPoint.getX()+" "+newPoint.getY());
+                // update MBRs of all ancestors
+                updateMBR(curNode);
+            }
+
+        }
+        public void updateMBR(Node curNode)
+        {
+            // update MBRs of all nodes and its ancestors starting from curNode
+            if(curNode==null)
+                return;
+            if(curNode.leftChild!=null)
+            {
+                Entry expectedMBR = calculateMBR(curNode.leftChild.leftEntry, curNode.leftChild.rightEntry);
+                if(!curNode.leftEntry.equals(expectedMBR))
+                    curNode.leftEntry = expectedMBR;
+            }
+            if(curNode.rightChild!=null)
+            {
+                Entry expectedMBR = calculateMBR(curNode.rightChild.leftEntry, curNode.rightChild.rightEntry);
+                if(!curNode.rightEntry.equals(expectedMBR))
+                    curNode.rightEntry = expectedMBR;
+            }
+            updateMBR(curNode.parent);
+        }
+        public Entry calculateMBR(Entry leftEntry, Entry rightEntry)
+        {
+            Entry ans = new Entry();
+            ans.lowerBottom = new Point();
+            if(leftEntry!=null) {
+                ans.lowerBottom.x = (int) leftEntry.lowerBottom.getX();
+                ans.lowerBottom.y = (int) leftEntry.lowerBottom.getY();
+            }
+            if(rightEntry!=null)
+            {
+                ans.lowerBottom.x = (int)Math.min(rightEntry.lowerBottom.getX(), ans.lowerBottom.x);
+                ans.lowerBottom.y = (int)Math.min(rightEntry.lowerBottom.getY(), ans.lowerBottom.y);
+            }
+
+            ans.upperTop = new Point();
+            if(leftEntry!=null)
+            {
+                ans.upperTop.x = (int)(leftEntry.upperTop!=null ? leftEntry.upperTop.getX() : leftEntry.lowerBottom.getX());
+                ans.upperTop.y = (int)(leftEntry.upperTop!=null ? leftEntry.upperTop.getY() : leftEntry.lowerBottom.getY());
+            }
+            if(rightEntry!=null)
+            {
+                ans.upperTop.x = (int) Math.max(ans.upperTop.getX(), rightEntry.upperTop!=null ? rightEntry.upperTop.getX() : rightEntry.lowerBottom.getX());
+                ans.upperTop.y = (int) Math.max(ans.upperTop.getY(), rightEntry.upperTop!=null ? rightEntry.upperTop.getY() : rightEntry.lowerBottom.getY());
+            }
+
+            return ans;
+        }
+        public int findMinMBRWhileAdd(Point newPoint, Node curNode)
+        {
+            // return 0 for left child and 1 for right child
+
+            // check if new point lies in left MBR
+            if(curNode.leftEntry!=null){
+                if(pointInRectOrNot(newPoint, curNode.leftEntry.lowerBottom, curNode.leftEntry.upperTop))
+                    return 0;
+            }
+            if(curNode.rightEntry!=null)
+            {
+                if(pointInRectOrNot(newPoint, curNode.rightEntry.lowerBottom, curNode.rightEntry.upperTop))
+                    return 1;
+            }
+
+            long leftMBRArea = calculateNewRectArea(newPoint, curNode.leftEntry.lowerBottom, curNode.leftEntry.upperTop);
+            long rightMBRArea = calculateNewRectArea(newPoint, curNode.rightEntry.lowerBottom, curNode.rightEntry.upperTop);
+
+            return leftMBRArea<=rightMBRArea ? 0 : 1; //
+        }
+        public long calculateNewRectArea(Point newPoint, Point rectLowerBottom, Point rectUpperTop)
+        {
+            double minX = Math.min(newPoint.getX(), rectLowerBottom.getX());
+            double maxX = Math.max(newPoint.getX(), rectUpperTop.getX());
+            double minY = Math.min(newPoint.getY(), rectLowerBottom.getY());
+            double maxY = Math.max(newPoint.getY(), rectUpperTop.getY());
+            return (long)((maxX-minX)*(maxY-minY));
+        }
+        public boolean pointInRectOrNot(Point point, Point rectLowerBottom, Point rectUpperTop)
+        {
+            if( point.getX()>=rectLowerBottom.getX() &&
+                    point.getX()<=rectUpperTop.getX() &&
+                    point.getY()>=rectLowerBottom.getY() &&
+                    point.getY()<=rectUpperTop.getY()
+            )
+                return true;
+            return false;
+        }
+        public long calculatePointDistance(Point a, Point b)
+        {
+            return (long)Math.sqrt(Math.pow(a.x-b.x,2)+Math.pow(a.y-b.y,2));
+        }
         public void scan() {
             Queue<Node> q = new LinkedList<>();
             q.add(root);
