@@ -296,22 +296,48 @@ class Entry {
                     curr = curr.rightChild;
                 }
             }
+            System.out.println("Leaf node which contains the delPoint----------");
+            System.out.print("Left Entry: ");
+            printEntry(curr.leftEntry);
+            System.out.print("Right Entry: ");
+            printEntry(curr.rightEntry);
+            System.out.println("------------");
             //Found the node to be deleted
-            if (curr.leftEntry != null && curr.rightEntry != null) {
+            boolean fullLeaf = false;
+            boolean emptyLeaf = false;
+            if(curr.leftEntry != null && curr.rightEntry != null){
+                fullLeaf = true;
+            }
+            else{
+                emptyLeaf = true;
+            }
+            if (fullLeaf) {
                 if (checkPointWithEntry(curr.leftEntry, delPoint)) {
                     curr.leftEntry = null;
                 } else if (checkPointWithEntry(curr.rightEntry, delPoint)) {
                     curr.rightEntry = null;
                 }
                 Node parent = curr.parent;
-                if (parent == root) {
-                    parent = curr;
-                    root = parent;
+                if(parent == null){
+                    //curr is the root node
+                    root = curr;
                     return;
                 }
-                curr = parent;
+                else if(parent == root){
+                    root = parent;
+                    curr = parent;
+                    updateMBR(curr);
+                    return;
+                }
+                else {
+                    //parent is the root node
+                    curr = parent;
+                    updateMBR(curr);
+                    return;
+                }
+
             }
-            if (curr.leftEntry == null || curr.rightEntry == null) {
+            if (emptyLeaf) {
                 curr.leftEntry = null;
                 curr.rightEntry = null;
                 if (curr.parent == null) {
@@ -325,6 +351,8 @@ class Entry {
                     if (grandParent == null) {
                         //parent is root
                         parent = parent.rightChild;
+                        parent.parent =null;
+                        root = parent;
                     } else {
                         if (grandParent.leftChild == parent) {
                             grandParent.leftChild = curr;
@@ -334,11 +362,14 @@ class Entry {
                             curr.parent = grandParent;
                         }
                     }
+
                 } else {
                     Node grandParent = parent.parent;
                     if (grandParent == null) {
                         //parent is root
                         parent = parent.leftChild;
+                        parent.parent =null;
+                        root = parent;
                     } else {
                         if (grandParent.leftChild == parent) {
                             grandParent.leftChild = curr;
@@ -349,6 +380,8 @@ class Entry {
                         }
                     }
                 }
+                curr = parent;
+                updateMBR(curr);
             }
         }
 
