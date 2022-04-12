@@ -152,17 +152,31 @@ class Entry {
             // update MBRs of all nodes and its ancestors starting from curNode
             if(curNode==null)
                 return;
+            boolean isLeftChildEmptyLeaf = false;
+            boolean isRightChildEmptyLeaf = false;
             if(curNode.leftChild!=null)
             {
                 Entry expectedMBR = calculateMBR(curNode.leftChild.leftEntry, curNode.leftChild.rightEntry);
+                if(curNode.leftChild.leftEntry == null || curNode.leftChild.rightEntry == null){
+                    isLeftChildEmptyLeaf = true;
+                }
                 if(!curNode.leftEntry.equals(expectedMBR))
                     curNode.leftEntry = expectedMBR;
             }
             if(curNode.rightChild!=null)
             {
                 Entry expectedMBR = calculateMBR(curNode.rightChild.leftEntry, curNode.rightChild.rightEntry);
+                if(curNode.rightChild.leftEntry == null || curNode.rightChild.rightEntry == null){
+                    isRightChildEmptyLeaf = true;
+                }
                 if(!curNode.rightEntry.equals(expectedMBR))
                     curNode.rightEntry = expectedMBR;
+            }
+            if(isLeftChildEmptyLeaf && isRightChildEmptyLeaf){
+                curNode.leftEntry = curNode.leftChild.leftEntry == null ? curNode.leftChild.rightEntry : curNode.leftChild.leftEntry;
+                curNode.rightEntry = curNode.rightChild.leftEntry == null ? curNode.rightChild.rightEntry : curNode.rightChild.leftEntry;
+                curNode.leftChild = null;
+                curNode.rightChild = null;
             }
             updateMBR(curNode.parent);
         }
@@ -296,12 +310,12 @@ class Entry {
                     curr = curr.rightChild;
                 }
             }
-            System.out.println("Leaf node which contains the delPoint----------");
-            System.out.print("Left Entry: ");
-            printEntry(curr.leftEntry);
-            System.out.print("Right Entry: ");
-            printEntry(curr.rightEntry);
-            System.out.println("------------");
+//            System.out.println("Leaf node which contains the delPoint----------");
+//            System.out.print("Left Entry: ");
+//            printEntry(curr.leftEntry);
+//            System.out.print("Right Entry: ");
+//            printEntry(curr.rightEntry);
+//            System.out.println("------------");
             //Found the node to be deleted
             boolean fullLeaf = false;
             boolean emptyLeaf = false;
@@ -362,7 +376,6 @@ class Entry {
                             curr.parent = grandParent;
                         }
                     }
-
                 } else {
                     Node grandParent = parent.parent;
                     if (grandParent == null) {
