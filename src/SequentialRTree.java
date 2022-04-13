@@ -406,17 +406,14 @@ class Entry {
                         parent.parent = null;
                         root = parent;
                     } else {
+                        Node toBeReplaced = parent.leftChild.equals(curr) ? parent.rightChild : parent.leftChild;
                         if (grandParent.leftChild.equals(parent)) {
-                            Node toBeReplaced = parent.leftChild.equals(curr) ? parent.rightChild : parent.rightChild;
                             grandParent.leftChild = toBeReplaced;
-                            toBeReplaced.parent = grandParent;
-                            curr = toBeReplaced;
                         } else {
-                            Node toBeReplaced = parent.leftChild.equals(curr) ? parent.rightChild : parent.rightChild;
                             grandParent.rightChild = toBeReplaced;
-                            toBeReplaced.parent = grandParent;
-                            curr = toBeReplaced;
                         }
+                        toBeReplaced.parent = grandParent;
+                        curr = toBeReplaced;
                     }
                 } else {
                     Node grandParent = parent.parent;
@@ -426,17 +423,14 @@ class Entry {
                         parent.parent =null;
                         root = parent;
                     } else {
+                        Node toBeReplaced = parent.leftChild.equals(curr) ? parent.rightChild : parent.leftChild;
                         if (grandParent.leftChild.equals(parent)) {
-                            Node toBeReplaced = parent.leftChild.equals(curr) ? parent.rightChild : parent.rightChild;
                             grandParent.leftChild = toBeReplaced;
-                            toBeReplaced.parent = grandParent;
-                            curr = toBeReplaced;
                         } else {
-                            Node toBeReplaced = parent.leftChild.equals(curr) ? parent.rightChild : parent.rightChild;
                             grandParent.rightChild = toBeReplaced;
-                            toBeReplaced.parent = grandParent;
-                            curr = toBeReplaced;
                         }
+                        toBeReplaced.parent = grandParent;
+                        curr = toBeReplaced;
                     }
                 }
                 curr = curr.parent;
