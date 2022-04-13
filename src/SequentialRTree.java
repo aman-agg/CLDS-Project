@@ -96,7 +96,7 @@ class Entry {
                 }
                 if (internal) {
                     int minSide = findMinMBRWhileAdd(newPoint, curNode);
-                    System.out.println("Traversing while addition to side (0 or 1) : " + minSide);
+//                    System.out.println("Traversing while addition to side (0 or 1) : " + minSide);
                     if (minSide % 2 == 0)
                         curNode = curNode.leftChild;
                     else
@@ -179,6 +179,40 @@ class Entry {
                 curNode.rightChild = null;
             }
             updateMBR(curNode.parent);
+        }
+        public boolean contains(Point p){
+            Queue<Node> q = new LinkedList<>();
+            q.add(root);
+            q.add(null);
+            int level = 0;
+            while (q.size() != 0) {
+                Node curr = q.poll();
+                if (curr == null) {
+                    if (q.size() == 0) {
+                        break;
+                    }
+                    level++;
+                    q.add(null);
+                    continue;
+                }
+                if(curr.leftEntry != null && curr.leftEntry.isPoint()){
+                    if(p.equals(curr.leftEntry.lowerBottom)){
+                        return true;
+                    }
+                }
+                if(curr.rightEntry != null && curr.rightEntry.isPoint()){
+                    if(p.equals(curr.rightEntry.lowerBottom)){
+                        return true;
+                    }
+                }
+                if (curr.leftChild != null) {
+                    q.add(curr.leftChild);
+                }
+                if (curr.rightChild != null) {
+                    q.add(curr.rightChild);
+                }
+            }
+            return false;
         }
         public Entry calculateMBR(Entry leftEntry, Entry rightEntry)
         {
@@ -296,6 +330,10 @@ class Entry {
         }
 
         public void delete(Point delPoint) {
+            if(this.contains(delPoint) == false){
+                System.out.println("Point not present in tree");
+                return;
+            }
             Node curr = root;
             while (true) {
                 if (curr.leftEntry != null && curr.leftEntry.isPoint() && curr.leftChild == null) {
@@ -349,7 +387,6 @@ class Entry {
                     updateMBR(curr);
                     return;
                 }
-
             }
             if (emptyLeaf) {
                 curr.leftEntry = null;
@@ -365,10 +402,10 @@ class Entry {
                     if (grandParent == null) {
                         //parent is root
                         parent = parent.rightChild;
-                        parent.parent =null;
+                        parent.parent = null;
                         root = parent;
                     } else {
-                        if (grandParent.leftChild == parent) {
+                        if (grandParent.leftChild.equals(parent)) {
                             grandParent.leftChild = curr;
                             curr.parent = grandParent;
                         } else {
@@ -384,7 +421,7 @@ class Entry {
                         parent.parent =null;
                         root = parent;
                     } else {
-                        if (grandParent.leftChild == parent) {
+                        if (grandParent.leftChild.equals(parent)) {
                             grandParent.leftChild = curr;
                             curr.parent = grandParent;
                         } else {
@@ -393,7 +430,7 @@ class Entry {
                         }
                     }
                 }
-                curr = parent;
+                curr = curr.parent;
                 updateMBR(curr);
             }
         }

@@ -11,9 +11,10 @@ public class Main {
         System.out.println("1. Add (x y)");
         System.out.println("2. Delete (x y)");
         System.out.println("3. Print Tree");
-        System.out.println("4. Exit");
+        System.out.println("4. Contains");
+        System.out.println("5. Exit");
         int n = 0;
-        while(n > 4 || n < 1){
+        while(n > 5 || n < 1){
             System.out.print("Choose operation number: ");
             n = sc.nextInt();
             System.out.println();
@@ -44,8 +45,18 @@ public class Main {
             else if(operation == 3){
                 rTree.scan();
             }
-            else{
+            else if(operation == 4){
+                System.out.print("Point to check: ");
+                int x = sc.nextInt();
+                int y = sc.nextInt();
+                System.out.println();
+                System.out.println(rTree.contains(new Point(x,y)));
+            }
+            else if(operation == 5){
                 break;
+            }
+            else{
+                System.out.println("Incorrect input");
             }
         }
     }
