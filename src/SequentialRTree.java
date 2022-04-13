@@ -393,11 +393,12 @@ class Entry {
                 curr.rightEntry = null;
                 if (curr.parent == null) {
                     //curr is root node
+
                     curr = null;
                     return;
                 }
                 Node parent = curr.parent;
-                if (parent.leftChild.leftEntry == null && parent.leftChild.rightEntry == null) {
+                if (parent.leftChild.equals(curr)) {
                     Node grandParent = parent.parent;
                     if (grandParent == null) {
                         //parent is root
@@ -406,11 +407,15 @@ class Entry {
                         root = parent;
                     } else {
                         if (grandParent.leftChild.equals(parent)) {
-                            grandParent.leftChild = curr;
-                            curr.parent = grandParent;
+                            Node toBeReplaced = parent.leftChild.equals(curr) ? parent.rightChild : parent.rightChild;
+                            grandParent.leftChild = toBeReplaced;
+                            toBeReplaced.parent = grandParent;
+                            curr = toBeReplaced;
                         } else {
-                            grandParent.rightChild = curr;
-                            curr.parent = grandParent;
+                            Node toBeReplaced = parent.leftChild.equals(curr) ? parent.rightChild : parent.rightChild;
+                            grandParent.rightChild = toBeReplaced;
+                            toBeReplaced.parent = grandParent;
+                            curr = toBeReplaced;
                         }
                     }
                 } else {
@@ -422,11 +427,15 @@ class Entry {
                         root = parent;
                     } else {
                         if (grandParent.leftChild.equals(parent)) {
-                            grandParent.leftChild = curr;
-                            curr.parent = grandParent;
+                            Node toBeReplaced = parent.leftChild.equals(curr) ? parent.rightChild : parent.rightChild;
+                            grandParent.leftChild = toBeReplaced;
+                            toBeReplaced.parent = grandParent;
+                            curr = toBeReplaced;
                         } else {
-                            grandParent.rightChild = curr;
-                            curr.parent = grandParent;
+                            Node toBeReplaced = parent.leftChild.equals(curr) ? parent.rightChild : parent.rightChild;
+                            grandParent.rightChild = toBeReplaced;
+                            toBeReplaced.parent = grandParent;
+                            curr = toBeReplaced;
                         }
                     }
                 }
