@@ -407,12 +407,12 @@ class Entry {
                         root = parent;
                     } else {
                         if (grandParent.leftChild.equals(parent)) {
-                            Node toBeReplaced = parent.leftChild.equals(curr) ? parent.rightChild : parent.rightChild;
+                            Node toBeReplaced = parent.leftChild.equals(curr) ? parent.rightChild : parent.leftChild;
                             grandParent.leftChild = toBeReplaced;
                             toBeReplaced.parent = grandParent;
                             curr = toBeReplaced;
                         } else {
-                            Node toBeReplaced = parent.leftChild.equals(curr) ? parent.rightChild : parent.rightChild;
+                            Node toBeReplaced = parent.leftChild.equals(curr) ? parent.rightChild : parent.leftChild;
                             grandParent.rightChild = toBeReplaced;
                             toBeReplaced.parent = grandParent;
                             curr = toBeReplaced;
@@ -427,12 +427,12 @@ class Entry {
                         root = parent;
                     } else {
                         if (grandParent.leftChild.equals(parent)) {
-                            Node toBeReplaced = parent.leftChild.equals(curr) ? parent.rightChild : parent.rightChild;
+                            Node toBeReplaced = parent.leftChild.equals(curr) ? parent.rightChild : parent.leftChild;
                             grandParent.leftChild = toBeReplaced;
                             toBeReplaced.parent = grandParent;
                             curr = toBeReplaced;
                         } else {
-                            Node toBeReplaced = parent.leftChild.equals(curr) ? parent.rightChild : parent.rightChild;
+                            Node toBeReplaced = parent.leftChild.equals(curr) ? parent.rightChild : parent.leftChild;
                             grandParent.rightChild = toBeReplaced;
                             toBeReplaced.parent = grandParent;
                             curr = toBeReplaced;
