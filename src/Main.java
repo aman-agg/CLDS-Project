@@ -2,6 +2,10 @@ import java.awt.*;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.Scanner;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class Main {
     public static int printOperations(){
@@ -20,10 +24,8 @@ public class Main {
             System.out.println();
         }
         return n;
-
     }
-    public static void main(String[] args) throws java.io.IOException{
-	// write your code here
+    public static void runSequentialRTree(){
         SequentialRTree rTree = new SequentialRTree();
         Scanner sc = new Scanner(System.in);
         while(true){
@@ -59,5 +61,24 @@ public class Main {
                 System.out.println("Incorrect input");
             }
         }
+    }
+    public static void runLockBasedRTree(){
+        ReentrantLock sharedLock = new ReentrantLock();
+        ExecutorService executorService = Executors.newFixedThreadPool(5);
+        for(int i = 0;i<5;i++){
+            executorService.submit(new LockBasedRTree(sharedLock));
+        }
+
+        executorService.shutdown();
+    }
+    public static void main(String[] args) throws java.io.IOException{
+	// write your code here
+        runLockBasedRTree();
+//        TASlock sharedLock = new TASlock();
+//        ExecutorService executorService = Executors.newFixedThreadPool(5);
+//        for (int i = 0; i < 5; i++) {
+//            executorService.submit(new TASLockCounter(sharedLock));
+//        }
+//        executorService.shutdown();
     }
 }
