@@ -71,9 +71,18 @@ public class Main {
 
         executorService.shutdown();
     }
+    public static void runLockFreeRTree(){
+        ExecutorService executorService = Executors.newFixedThreadPool(5);
+        for(int i = 0;i<4;i++){
+            executorService.submit(new LockFreeRTree());
+        }
+
+        executorService.shutdown();
+    }
     public static void main(String[] args) throws java.io.IOException{
 	// write your code here
-        runLockBasedRTree();
+//        runLockBasedRTree();
+        runLockFreeRTree();
 //        TASlock sharedLock = new TASlock();
 //        ExecutorService executorService = Executors.newFixedThreadPool(5);
 //        for (int i = 0; i < 5; i++) {
