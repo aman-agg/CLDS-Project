@@ -13,6 +13,10 @@ class Entry {
         lowerBottom = null;
         upperTop = null;
     }
+    Entry(Entry e){
+        this.lowerBottom = new Point(e.lowerBottom);
+        this.upperTop = new Point(e.upperTop);
+    }
 
     public boolean isPoint() {
         if (upperTop == null) {

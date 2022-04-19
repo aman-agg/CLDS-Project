@@ -19,8 +19,7 @@ public class LockFreeRTree implements Runnable{
     private static AtomicReference<Node> root = new AtomicReference<Node>();
     int counter  = 0;
     static final int threadPoolSize = 5;
-    ConcurrentHashMap<Integer, Integer> map
-            = new ConcurrentHashMap<>();
+    ConcurrentHashMap<Integer, Integer> map = new ConcurrentHashMap<>();
 
     // Create the set by newKeySet() method of ConcurrentHashMap
     Set<Integer> set = map.newKeySet();
@@ -38,7 +37,7 @@ public class LockFreeRTree implements Runnable{
             return;
         }
 
-        System.out.println("Thread Id : "+Thread.currentThread().getId()+ "Point not present. Trying to add point "+newPoint.toString());
+        System.out.println("Thread Id : "+Thread.currentThread().getId()+ " Point not present. Trying to add point "+newPoint.toString());
             try {
                 boolean restartAddition = true;
                 while (restartAddition) {
@@ -398,117 +397,181 @@ public class LockFreeRTree implements Runnable{
     public void delete(Point delPoint) {
 
         if (this.contains(delPoint) == false) {
-            System.out.println("Point not present in tree");
+            System.out.println("Thread ID : "+ Thread.currentThread().getId()+ " Deletion: Point not present in tree");
             return;
         }
-        System.out.println("Breakpoint 1");
+        System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion: Point present. Trying to del point " + delPoint.toString());
+
         try {
-
+            boolean restartDeletion = true;
             Node curr = root.get();
-            while (true) {
-                if (curr.leftEntry != null && curr.leftEntry.isPoint() && curr.leftChild == null) {
-                    break;
+            while (restartDeletion) {
+                if(delPoint == null){
+                    return;
                 }
-                if (curr.rightEntry != null && curr.rightEntry.isPoint() && curr.rightChild == null) {
-                    break;
+                while (true) {
+                    if (curr.leftEntry != null && curr.leftEntry.isPoint() && curr.leftChild == null) {
+                        break;
+                    }
+                    if (curr.rightEntry != null && curr.rightEntry.isPoint() && curr.rightChild == null) {
+                        break;
+                    }
+                    if (checkPointInMBR(curr.leftEntry, delPoint)) {
+                        curr = curr.leftChild;
+                    } else {
+                        curr = curr.rightChild;
+                    }
                 }
-                if (checkPointInMBR(curr.leftEntry, delPoint)) {
-                    curr = curr.leftChild;
+                System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion: Traversal completed, Node found: ");
+                printEntry(curr.leftEntry);
+                printEntry(curr.rightEntry);
+                boolean fullLeaf = false;
+                boolean emptyLeaf = false;
+                Node newNode = new Node();
+                Node parent = curr.parent;
+                Boolean isParentChildLinkLeft = null;
+                System.out.println("breakpoint 1");
+                if(parent != null) {
+                    isParentChildLinkLeft = parent.leftChild.equals(curr);
+                }
+                System.out.println("breakpoint 2 "+ isParentChildLinkLeft);
+                if (curr.leftEntry != null && curr.rightEntry != null) {
+                    fullLeaf = true;
+                    System.out.println("breakpoint 21");
+                    if(isParentChildLinkLeft == null){
+                        //current node is root node
+                        System.out.println("breakpoint 22");
+                        isParentChildLinkLeft = root.get().leftEntry.lowerBottom.equals(delPoint);
+                        if (isParentChildLinkLeft){
+                            newNode.rightEntry = root.get().rightEntry;
+                        }
+                        else{
+                            newNode.leftEntry = root.get().leftEntry;
+                        }
+                    }
+                    else if (isParentChildLinkLeft) {
+                        System.out.println("breakpoint 23");
+                        newNode.rightEntry = new Entry(curr.rightEntry);
+                    }
+                    else{
+                        System.out.println("breakpoint 24");
+                        newNode.leftEntry = new Entry(curr.leftEntry);
+                    }
+                    System.out.println("breakpoint 3");
                 } else {
-                    curr = curr.rightChild;
+                    emptyLeaf = true;
+                    newNode = null;
+                    System.out.println("breakpoint 4");
                 }
-            }
-//            System.out.println("Leaf node which contains the delPoint----------");
-//            System.out.print("Left Entry: ");
-//            printEntry(curr.leftEntry);
-//            System.out.print("Right Entry: ");
-//            printEntry(curr.rightEntry);
-//            System.out.println("------------");
-            //Found the node to be deleted
-            boolean fullLeaf = false;
-            boolean emptyLeaf = false;
-            if (curr.leftEntry != null && curr.rightEntry != null) {
-                fullLeaf = true;
-            } else {
-                emptyLeaf = true;
-            }
-            if (fullLeaf) {
-                if (checkPointWithEntry(curr.leftEntry, delPoint)) {
+                System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion: Point present. Found leaf case ");
+                if(root.get().equals(curr) && root.compareAndSet(root.get(),newNode)){
+                    System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion: Point is in root. Successfully deleted ");
+                    restartDeletion = false;
+                    return;
+                }
+
+                if (fullLeaf) {
+                    System.out.println("Thread ID : "+ Thread.currentThread().getId()+ " Deletion: Full leaf case");
+
+                    if(parent == null){
+                        //current node is root node
+                        if(root.compareAndSet(root.get(),newNode)){
+                            restartDeletion = false;
+                        }
+                    }
+                    else if(root.get().equals(parent)){
+                        if(isParentChildLinkLeft
+                                ? leftChildUpdater.compareAndSet(parent,curr,newNode)
+                                : rightChildUpdater.compareAndSet(parent,curr,newNode)){
+                            restartDeletion = false;
+                        }
+                    }
+                    else if(parent != null && isParentChildLinkLeft
+                            ? leftChildUpdater.compareAndSet(parent,curr,newNode)
+                            : rightChildUpdater.compareAndSet(parent,curr,newNode)){
+                        restartDeletion = false;
+                    }
+                    if(!restartDeletion)
+                        updateMBR(newNode);
+//                    if (parent == null) {
+//                        //curr is the root node
+//                        root.set(curr);
+//                        return;
+//                    } else if (parent == root.get()) {
+//                        root.set(parent);
+//                        curr = parent;
+//                        updateMBR(curr);
+//                        return;
+//                    } else {
+//                        //parent is the root node
+//                        curr = parent;
+//                        updateMBR(curr);
+//                        return;
+//                    }
+                }
+                if (emptyLeaf) {
+                    System.out.println("Thread ID : "+ Thread.currentThread().getId()+ " Deletion: Empty leaf case");
                     curr.leftEntry = null;
-                } else if (checkPointWithEntry(curr.rightEntry, delPoint)) {
                     curr.rightEntry = null;
-                }
-                Node parent = curr.parent;
-                if (parent == null) {
-                    //curr is the root node
-                    root.set(curr);
-                    return;
-                } else if (parent == root.get()) {
-                    root.set(parent);
-                    curr = parent;
-                    updateMBR(curr);
-                    return;
-                } else {
-                    //parent is the root node
-                    curr = parent;
-                    updateMBR(curr);
-                    return;
+                    if (parent == null) {
+                        //curr is root node
+                        if(root.compareAndSet(root.get(), newNode)){
+                            restartDeletion = false;
+                        }
+                    }
+                    if(parent != null && isParentChildLinkLeft
+                            ? leftChildUpdater.compareAndSet(parent,curr,newNode)
+                            : rightChildUpdater.compareAndSet(parent,curr,newNode)){
+                        restartDeletion = false;
+                    }
+                    if(!restartDeletion){
+                        updateMBR(parent);
+                    }
+//                    if (parent.leftChild.equals(curr)) {
+//                        Node grandParent = parent.parent;
+//                        if (grandParent == null) {
+//                            //parent is root
+//                            parent = parent.rightChild;
+//                            parent.parent = null;
+//                            root.set(parent);
+//                        } else {
+//                            Node toBeReplaced = parent.leftChild.equals(curr) ? parent.rightChild : parent.leftChild;
+//                            if (grandParent.leftChild.equals(parent)) {
+//                                grandParent.leftChild = toBeReplaced;
+//                            } else {
+//                                grandParent.rightChild = toBeReplaced;
+//                            }
+//                            toBeReplaced.parent = grandParent;
+//                            curr = toBeReplaced;
+//                        }
+//                    } else {
+//                        Node grandParent = parent.parent;
+//                        if (grandParent == null) {
+//                            //parent is root
+//                            parent = parent.leftChild;
+//                            parent.parent = null;
+//                            root.set(parent);
+//                        } else {
+//                            Node toBeReplaced = parent.leftChild.equals(curr) ? parent.rightChild : parent.leftChild;
+//                            if (grandParent.leftChild.equals(parent)) {
+//                                grandParent.leftChild = toBeReplaced;
+//                            } else {
+//                                grandParent.rightChild = toBeReplaced;
+//                            }
+//                            toBeReplaced.parent = grandParent;
+//                            curr = toBeReplaced;
+//                        }
+//                    }
+//                    curr = curr.parent;
+//                    updateMBR(newNode);
                 }
             }
-            if (emptyLeaf) {
-                curr.leftEntry = null;
-                curr.rightEntry = null;
-                if (curr.parent == null) {
-                    //curr is root node
-
-                    curr = null;
-                    return;
-                }
-                Node parent = curr.parent;
-                if (parent.leftChild.equals(curr)) {
-                    Node grandParent = parent.parent;
-                    if (grandParent == null) {
-                        //parent is root
-                        parent = parent.rightChild;
-                        parent.parent = null;
-                        root.set(parent);
-                    } else {
-                        Node toBeReplaced = parent.leftChild.equals(curr) ? parent.rightChild : parent.leftChild;
-                        if (grandParent.leftChild.equals(parent)) {
-                            grandParent.leftChild = toBeReplaced;
-                        } else {
-                            grandParent.rightChild = toBeReplaced;
-                        }
-                        toBeReplaced.parent = grandParent;
-                        curr = toBeReplaced;
-                    }
-                } else {
-                    Node grandParent = parent.parent;
-                    if (grandParent == null) {
-                        //parent is root
-                        parent = parent.leftChild;
-                        parent.parent = null;
-                        root.set(parent);
-                    } else {
-                        Node toBeReplaced = parent.leftChild.equals(curr) ? parent.rightChild : parent.leftChild;
-                        if (grandParent.leftChild.equals(parent)) {
-                            grandParent.leftChild = toBeReplaced;
-                        } else {
-                            grandParent.rightChild = toBeReplaced;
-                        }
-                        toBeReplaced.parent = grandParent;
-                        curr = toBeReplaced;
-                    }
-                }
-                curr = curr.parent;
-                updateMBR(curr);
+        }
+        finally{
+                System.out.println("Deletion Execution completed by " + Thread.currentThread().getId());
             }
-        }
-        finally {
 
         }
-    }
-
 
     public boolean checkPointWithEntry(Entry rect, Point p) {
 
@@ -534,32 +597,17 @@ public class LockFreeRTree implements Runnable{
         return true;
     }
 
-    public int printOperations(){
-        Scanner sc = new Scanner(System.in);
-
-        System.out.println("R Tree operations");
-        System.out.println("1. Add (x y)");
-        System.out.println("2. Delete (x y)");
-        System.out.println("3. Print Tree");
-        System.out.println("4. Contains");
-        System.out.println("5. Exit");
-        int n = 0;
-        while(n > 5 || n < 1){
-            System.out.print("Choose operation number: ");
-            n = sc.nextInt();
-            System.out.println();
-        }
-        return n;
-    }
     @Override
     public void run() {
 
-//        int[] operations = {1,1,1,2,1,2,1};
+//        int[] operations = {1,1,1,2,1,2,1,2};
+//        int[][] inputs = {{1,1},{2,2},{3,3},{1,1},{4,4},{2,2},{5,5},{3,3}};
+        int[] operations = {1,1,1,2,2};
+        int[][] inputs = {{1,1},{2,2},{3,3},{2,2},{2,2}};
+//        int[] operations = {1,1,2,1,1,2,1};
+//        int[][] inputs = {{1,1},{2,2},{1,1},{2,4},{2,4},{2,2},{1,4}};
+//        int[] operations = {1,1,1,1,1,2,1};
 //        int[][] inputs = {{1,1},{2,2},{3,3},{1,1},{2,4},{2,2},{1,4}};
-//        int[] operations = {1,1,1,2,1,2,1};
-//        int[][] inputs = {{1,1},{2,2},{3,3},{1,1},{2,4},{2,2},{1,4}};
-        int[] operations = {1,1,1,1,1,1,1};
-        int[][] inputs = {{1,1},{2,2},{3,3},{1,1},{2,4},{2,3},{1,4}};
         Scanner sc = new Scanner(System.in);
         int prevAtomicValue = atomicInteger.get();
         int newAtomicValue = prevAtomicValue+1;
@@ -571,16 +619,15 @@ public class LockFreeRTree implements Runnable{
             newAtomicValue=prevAtomicValue+1;
         }
         int opInd = newAtomicValue;
-        System.out.println("Operation chosen by Thread "+Thread.currentThread().getId()+ " : " + opInd);
+        System.out.println("Operation Index chosen by Thread "+Thread.currentThread().getId()+ " : " + opInd);
 //        while(threadSafeUniqueNumbers.contains(opInd) == false){
 //            opInd = rand.nextInt(operations.length);
 //        }
 
         if(set.contains(opInd)){
-            System.out.println("Thread ID : "+ Thread.currentThread().getId()+ "Already in set");
+            System.out.println("Thread ID : "+ Thread.currentThread().getId()+ " Already in set");
         }
         else {
-
             set.add(opInd);
             int operation = operations[opInd];
             if (operation == 1) {
@@ -601,6 +648,9 @@ public class LockFreeRTree implements Runnable{
                         prevAtomicValue = atomicInteger.get();
                         newAtomicValue = prevAtomicValue + 1;
                         if (atomicInteger.compareAndSet(prevAtomicValue, newAtomicValue)) {
+//                            this.delete(new Point(2,2));
+//                            this.scan();
+//                            this.delete(new Point(3,3));
                             this.scan();
                             break;
                         }
@@ -613,10 +663,27 @@ public class LockFreeRTree implements Runnable{
                 int x = inputs[opInd][0];
                 int y = inputs[opInd][1];
                 Point temp = new Point(x,y);
-                System.out.println("Stage 1 Deletion: "+temp.toString());
+                System.out.println("Thread ID : "+ Thread.currentThread().getId()+ " Stage 1 Deletion: "+temp.toString());
                 this.delete(temp);
-                System.out.println("Thread ID: " + Thread.currentThread().getId());
-                counter++;
+                System.out.println("Thread ID: " + Thread.currentThread().getId() + " Completed Deletion");
+//                this.scan();
+                int prev = atomicInteger.get();
+                while(!atomicInteger.compareAndSet(prev, prev+1)){
+                    prev = atomicInteger.get();
+                }
+                System.out.println("Thread ID : "+Thread.currentThread().getId()+" Atomic counter "+atomicInteger);
+                if(atomicInteger.get()==8) {
+                    while (true) {
+                        prevAtomicValue = atomicInteger.get();
+                        newAtomicValue = prevAtomicValue + 1;
+                        if (atomicInteger.compareAndSet(prevAtomicValue, newAtomicValue)) {
+                            this.scan();
+                            System.out.println("Thread ID: " + Thread.currentThread().getId() + " Completed Scan");
+                            break;
+                        }
+                    }
+                }
+
             } else if (operation == 3) {
                 System.out.println("Scan");
                 this.scan();

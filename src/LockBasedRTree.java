@@ -262,9 +262,7 @@ public class LockBasedRTree implements Runnable{
 
             long leftMBRArea = calculateNewRectArea(newPoint, curNode.leftEntry.lowerBottom, curNode.leftEntry.upperTop);
             long rightMBRArea = calculateNewRectArea(newPoint, curNode.rightEntry.lowerBottom, curNode.rightEntry.upperTop);
-
         return leftMBRArea<=rightMBRArea ? 0 : 1; //
-
     }
     public long calculateNewRectArea(Point newPoint, Point rectLowerBottom, Point rectUpperTop)
     {
@@ -347,7 +345,6 @@ public class LockBasedRTree implements Runnable{
     }
 
     public void delete(Point delPoint) {
-
         if (this.contains(delPoint) == false) {
             System.out.println("Point not present in tree");
             return;
