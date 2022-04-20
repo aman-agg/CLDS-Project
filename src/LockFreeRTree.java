@@ -603,7 +603,7 @@ public class LockFreeRTree implements Runnable{
 //        int[] operations = {1,1,1,2,1,2,1,2};
 //        int[][] inputs = {{1,1},{2,2},{3,3},{1,1},{4,4},{2,2},{5,5},{3,3}};
         int[] operations = {1,1,1,2,2};
-        int[][] inputs = {{1,1},{2,2},{3,3},{2,2},{2,2}};
+        int[][] inputs = {{1,1},{2,2},{3,3},{2,2},{3,3}};
 //        int[] operations = {1,1,2,1,1,2,1};
 //        int[][] inputs = {{1,1},{2,2},{1,1},{2,4},{2,4},{2,2},{1,4}};
 //        int[] operations = {1,1,1,1,1,2,1};
@@ -643,19 +643,19 @@ public class LockFreeRTree implements Runnable{
                     prev = atomicInteger.get();
                 }
                 System.out.println("Thread ID : "+Thread.currentThread().getId()+" Atomic counter "+atomicInteger);
-                if(atomicInteger.get()==8) {
-                    while (true) {
-                        prevAtomicValue = atomicInteger.get();
-                        newAtomicValue = prevAtomicValue + 1;
-                        if (atomicInteger.compareAndSet(prevAtomicValue, newAtomicValue)) {
-//                            this.delete(new Point(2,2));
+//                if(atomicInteger.get()==8) {
+//                    while (true) {
+//                        prevAtomicValue = atomicInteger.get();
+//                        newAtomicValue = prevAtomicValue + 1;
+//                        if (atomicInteger.compareAndSet(prevAtomicValue, newAtomicValue)) {
+////                            this.delete(new Point(2,2));
+////                            this.scan();
+////                            this.delete(new Point(3,3));
 //                            this.scan();
-//                            this.delete(new Point(3,3));
-                            this.scan();
-                            break;
-                        }
-                    }
-                }
+//                            break;
+//                        }
+//                    }
+//                }
                 System.out.println("Thread ID: " + Thread.currentThread().getId() + " Completed Scan");
 
             } else if (operation == 2) {
@@ -664,7 +664,7 @@ public class LockFreeRTree implements Runnable{
                 int y = inputs[opInd][1];
                 Point temp = new Point(x,y);
                 System.out.println("Thread ID : "+ Thread.currentThread().getId()+ " Stage 1 Deletion: "+temp.toString());
-                this.delete(temp);
+                //this.delete(temp);
                 System.out.println("Thread ID: " + Thread.currentThread().getId() + " Completed Deletion");
 //                this.scan();
                 int prev = atomicInteger.get();
@@ -672,11 +672,12 @@ public class LockFreeRTree implements Runnable{
                     prev = atomicInteger.get();
                 }
                 System.out.println("Thread ID : "+Thread.currentThread().getId()+" Atomic counter "+atomicInteger);
-                if(atomicInteger.get()==8) {
-                    while (true) {
+                while (true) {
+                    if(atomicInteger.get()==8) {
                         prevAtomicValue = atomicInteger.get();
-                        newAtomicValue = prevAtomicValue + 1;
+                        newAtomicValue = prevAtomicValue;
                         if (atomicInteger.compareAndSet(prevAtomicValue, newAtomicValue)) {
+                            this.delete(temp);
                             this.scan();
                             System.out.println("Thread ID: " + Thread.currentThread().getId() + " Completed Scan");
                             break;
