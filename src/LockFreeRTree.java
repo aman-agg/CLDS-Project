@@ -215,15 +215,13 @@ public class LockFreeRTree implements Runnable{
                 if (!curNode.rightEntry.equals(expectedMBR))
                     curNode.rightEntry = expectedMBR;
             }
-            if (isLeftChildEmptyLeaf && isRightChildEmptyLeaf) {
-                curNode.leftEntry = curNode.leftChild.leftEntry == null ? curNode.leftChild.rightEntry : curNode.leftChild.leftEntry;
-                curNode.rightEntry = curNode.rightChild.leftEntry == null ? curNode.rightChild.rightEntry : curNode.rightChild.leftEntry;
-                curNode.leftChild = null;
-                curNode.rightChild = null;
-            }
+//            if (isLeftChildEmptyLeaf && isRightChildEmptyLeaf) {
+//                curNode.leftEntry = curNode.leftChild.leftEntry == null ? curNode.leftChild.rightEntry : curNode.leftChild.leftEntry;
+//                curNode.rightEntry = curNode.rightChild.leftEntry == null ? curNode.rightChild.rightEntry : curNode.rightChild.leftEntry;
+//                curNode.leftChild = null;
+//                curNode.rightChild = null;
+//            }
             updateMBR(curNode.parent);
-
-
     }
     public boolean contains(Point p){
         try {
@@ -488,8 +486,9 @@ public class LockFreeRTree implements Runnable{
                         newNode.parent = parent;
                         restartDeletion = false;
                     }
-                    if(!restartDeletion)
-                        updateMBR(newNode);
+                    if(!restartDeletion) {
+                        //updateMBR(newNode);
+                    }
                 }
                 if (emptyLeaf) {
                     System.out.println("Thread ID : "+ Thread.currentThread().getId()+ " Deletion: Empty leaf case");
@@ -499,7 +498,7 @@ public class LockFreeRTree implements Runnable{
                         restartDeletion = false;
                     }
                     if(!restartDeletion){
-                        updateMBR(parent);
+                        //updateMBR(parent);
                     }
                 }
             }
@@ -607,13 +606,14 @@ public class LockFreeRTree implements Runnable{
                         if (atomicInteger.compareAndSet(prevAtomicValue, newAtomicValue)) {
 //                            this.scan();
                             System.out.println("Addition completed");
-                            this.delete(temp);
-                            System.out.println("Scan after delete");
                             this.scan();
-                            System.out.println("Thread ID: " + Thread.currentThread().getId() + " Completed Scan");
+                            System.out.println("Thread ID: " + Thread.currentThread().getId() + " Completed Scan in Addition");
+                            atomicInteger.compareAndSet(newAtomicValue, newAtomicValue+1);
                             break;
                         }
                     }
+                    else if(atomicInteger.get()==22)
+                        break;
                 }
                 System.out.println("Thread ID: " + Thread.currentThread().getId() + " Completed Scan");
 
@@ -622,9 +622,9 @@ public class LockFreeRTree implements Runnable{
                 int x = inputs[opInd][0];
                 int y = inputs[opInd][1];
                 Point temp = new Point(x,y);
-                System.out.println("Thread ID : "+ Thread.currentThread().getId()+ " Stage 1 Deletion: "+temp.toString());
+//                System.out.println("Thread ID : "+ Thread.currentThread().getId()+ " Stage 1 Deletion: "+temp.toString());
                 //this.delete(temp);
-                System.out.println("Thread ID: " + Thread.currentThread().getId() + " Completed Deletion");
+//                System.out.println("Thread ID: " + Thread.currentThread().getId() + " Completed Deletion");
 //                this.scan();
                 int prev = atomicInteger.get();
                 while(!atomicInteger.compareAndSet(prev, prev+1)){
@@ -632,15 +632,16 @@ public class LockFreeRTree implements Runnable{
                 }
                 System.out.println("Thread ID : "+Thread.currentThread().getId()+" Atomic counter "+atomicInteger);
                 while (true) {
-                    if(atomicInteger.get()==21) {
+                    if(atomicInteger.get()>=22 && atomicInteger.get()%2==0) {
                         prevAtomicValue = atomicInteger.get();
                         newAtomicValue = prevAtomicValue;
                         if (atomicInteger.compareAndSet(prevAtomicValue, newAtomicValue)) {
 //                            this.scan();
                             this.delete(temp);
-                            System.out.println("Scan after delete");
                             this.scan();
-                            System.out.println("Thread ID: " + Thread.currentThread().getId() + " Completed Scan");
+                            atomicInteger.compareAndSet(newAtomicValue, newAtomicValue+1);
+//                            System.out.println("Scan after delete");
+                            System.out.println("Thread ID: " + Thread.currentThread().getId() + " Completed delete after additions and 1 scan");
                             break;
                         }
                     }
