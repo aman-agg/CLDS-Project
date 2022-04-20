@@ -367,13 +367,7 @@ public class LockBasedRTree implements Runnable{
                     curr = curr.rightChild;
                 }
             }
-//            System.out.println("Leaf node which contains the delPoint----------");
-//            System.out.print("Left Entry: ");
-//            printEntry(curr.leftEntry);
-//            System.out.print("Right Entry: ");
-//            printEntry(curr.rightEntry);
-//            System.out.println("------------");
-            //Found the node to be deleted
+
             boolean fullLeaf = false;
             boolean emptyLeaf = false;
             if (curr.leftEntry != null && curr.rightEntry != null) {
@@ -409,8 +403,7 @@ public class LockBasedRTree implements Runnable{
                 curr.rightEntry = null;
                 if (curr.parent == null) {
                     //curr is root node
-
-                    curr = null;
+                    root = null;
                     return;
                 }
                 Node parent = curr.parent;
@@ -512,9 +505,7 @@ public class LockBasedRTree implements Runnable{
         Random rand = new Random();
         int opInd = rand.nextInt(operations.length);
         System.out.println("Operation index 1: "+opInd);
-//        while(threadSafeUniqueNumbers.contains(opInd) == false){
-//            opInd = rand.nextInt(operations.length);
-//        }
+
         if(counter > 7){
             System.out.println("Scan");
             this.scan();

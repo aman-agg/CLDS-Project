@@ -16,14 +16,14 @@ public class LockFreeRTree implements Runnable{
     // FOR TESTING PURPOSES
     private static AtomicInteger atomicInteger = new AtomicInteger(0);
 
+
     private static AtomicReference<Node> root = new AtomicReference<Node>();
-    int counter  = 0;
-    static final int threadPoolSize = 5;
     ConcurrentHashMap<Integer, Integer> map = new ConcurrentHashMap<>();
 
     // Create the set by newKeySet() method of ConcurrentHashMap
     Set<Integer> set = map.newKeySet();
 
+    //To update the child links in the parent node using CAS
     private static final AtomicReferenceFieldUpdater<Node,Node> leftChildUpdater = newUpdater(Node.class, Node.class, "leftChild");
     private static final AtomicReferenceFieldUpdater<Node,Node> rightChildUpdater = newUpdater(Node.class, Node.class, "rightChild");
 
@@ -437,8 +437,6 @@ public class LockFreeRTree implements Runnable{
 //                printEntry(curr.rightEntry);
                 boolean fullLeaf = false;
                 boolean emptyLeaf = false;
-
-
 //                if(parent != null) {
 //                    isParentChildLinkLeft = parent.leftChild.equals(curr);
 //                }
