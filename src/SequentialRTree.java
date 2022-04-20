@@ -34,6 +34,18 @@ class Entry {
         }
         return false;
     }
+    public void printEntry() {
+        if (this == null) {
+            System.out.print("null");
+        } else {
+            System.out.print("lowerbottom: " + this.lowerBottom.x + " " + this.lowerBottom.y+" ");
+            if (this.upperTop == null) {
+                System.out.println("uppertop null ");
+            } else {
+                System.out.println("uppertop: "+ this.upperTop.x +" "+this.upperTop.y+" ");
+            }
+        }
+    }
 }
 
 class Node {
@@ -51,6 +63,15 @@ class Node {
         newNode.leftEntry = this.leftEntry;
         newNode.rightEntry = this.rightEntry;
         return newNode;
+    }
+    public void printNode(){
+        System.out.println("Printing node");
+        if(this == null){
+            System.out.println("Null Node");
+            return;
+        }
+        this.leftEntry.printEntry();
+        this.rightEntry.printEntry();
     }
 }
 

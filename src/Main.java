@@ -73,7 +73,7 @@ public class Main {
     }
     public static void runLockFreeRTree(){
         ExecutorService executorService = Executors.newFixedThreadPool(10);
-        for(int i = 0;i<4;i++){
+        for(int i = 0;i<10;i++){
             executorService.submit(new LockFreeRTree());
         }
         executorService.shutdown();
