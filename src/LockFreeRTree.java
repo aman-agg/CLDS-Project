@@ -148,10 +148,10 @@ public class LockFreeRTree implements Runnable {
                             internal = true;
                     }
                     if (internal) {
-                        if (checkAndCompressSkewedTree(curNode, parent, parentChildLinkLeft)) {
-                            traversal = false;
-                            break;
-                        }
+//                        if (checkAndCompressSkewedTree(curNode, parent, parentChildLinkLeft)) {
+//                            traversal = false;
+//                            break;
+//                        }
                         int minSide = findMinMBRWhileAdd(newPoint, curNode);
 //                    System.out.println("Traversing while addition to side (0 or 1) : " + minSide);
                         if (minSide % 2 == 0) {
@@ -211,15 +211,14 @@ public class LockFreeRTree implements Runnable {
                             System.out.println("Thread ID : " + Thread.currentThread().getId() + " Addition Successful - " + newPoint.toString());
                             additionSuccessfull = true;
                             restartAddition = false;
-                            traversal = false;
-                        } else if (parent != null && parentChildLinkLeft
+                        } else if (parent != null && (parentChildLinkLeft
                                 ? leftChildUpdater.compareAndSet(parent, curNode, newCurNode)
-                                : rightChildUpdater.compareAndSet(parent, curNode, newCurNode)) {
+                                : rightChildUpdater.compareAndSet(parent, curNode, newCurNode))) {
                             System.out.println("Thread ID : " + Thread.currentThread().getId() + " Addition Successful - " + newPoint.toString());
                             additionSuccessfull = true;
                             restartAddition = false;
-                            traversal = false;
                         }
+                        traversal = false;
                     }
                 }
                 if (additionSuccessfull) {
@@ -227,7 +226,10 @@ public class LockFreeRTree implements Runnable {
                     updateMBR(curNode);
                 }
             }
-        } finally {
+        } catch(Exception e){
+            e.printStackTrace();
+            System.exit(2);
+        }finally {
 //            System.out.println("Addition Execution completed by " + Thread.currentThread().getId());
         }
     }
@@ -349,7 +351,8 @@ public class LockFreeRTree implements Runnable {
                 }
             }
             return false;
-        } finally {
+        }
+        finally {
 
         }
     }
@@ -438,7 +441,6 @@ public class LockFreeRTree implements Runnable {
                 System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion: Point present. Trying to del point " + delPoint.toString());
 
                 Node curr = root.get();
-                System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion restarted " + delPoint.toString());
                 Node forCas = root.get();
                 if (delPoint == null) {
                     return;
@@ -457,15 +459,15 @@ public class LockFreeRTree implements Runnable {
                     if (curr.rightEntry != null && curr.rightEntry.isPoint() && curr.rightChild == null) {
                         break;
                     }
-                    if(!curr.leftEntry.isPoint() && !curr.rightEntry.isPoint()) {
-//                        System.out.println("Compression started");
-//                        curr.printNode();
-                        if (checkAndCompressSkewedTree(curr, parent, isParentChildLinkLeft)) {
-//                            System.out.println("Compression completed");
-                            compression_false = true;
-                            break;
-                        }
-                    }
+//                    if(!curr.leftEntry.isPoint() && !curr.rightEntry.isPoint()) {
+////                        System.out.println("Compression started");
+////                        curr.printNode();
+//                        if (checkAndCompressSkewedTree(curr, parent, isParentChildLinkLeft)) {
+////                            System.out.println("Compression completed");
+//                            compression_false = true;
+//                            break;
+//                        }
+//                    }
                     if (checkPointInMBR(curr.leftEntry, delPoint)) {
                         parent = curr;
                         curr = curr.leftChild;
@@ -505,7 +507,7 @@ public class LockFreeRTree implements Runnable {
                     } else if (curr.rightEntry.lowerBottom.equals(delPoint)) {
                         newNode.rightEntry = null;
                     } else {
-                        break;
+                        continue;
                     }
                 } else if (curr.leftEntry != null || curr.rightEntry != null) {
                     //Empty Leaf case
@@ -513,6 +515,8 @@ public class LockFreeRTree implements Runnable {
                     emptyLeaf = true;
                     newNode = null;
                 }
+                else
+                    continue;
                 System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion: Point present. Found leaf case " + fullLeaf);
                 if (parent == null && root.compareAndSet(forCas, newNode)) {
                     //current node is root node
@@ -536,10 +540,13 @@ public class LockFreeRTree implements Runnable {
                             : rightChildUpdater.compareAndSet(parent, curr, newNode)) {
                         newNode.parent = parent;
                         restartDeletion = false;
+                        return;
                     }
-                    if (!restartDeletion) {
-                        //updateMBR(newNode);
-                    }
+                    else
+                        continue;
+//                    if (!restartDeletion) {
+//                        //updateMBR(newNode);
+//                    }
                 }
                 if (emptyLeaf) {
                     System.out.println("Thread ID : " + Thread.currentThread().getId() + " Deletion: Empty leaf case");
@@ -547,10 +554,13 @@ public class LockFreeRTree implements Runnable {
                             ? leftChildUpdater.compareAndSet(parent, curr, newNode)
                             : rightChildUpdater.compareAndSet(parent, curr, newNode)) {
                         restartDeletion = false;
+                        return;
                     }
-                    if (!restartDeletion) {
-                        //updateMBR(parent);
-                    }
+                    else
+                        continue;
+//                    if (!restartDeletion) {
+//                        //updateMBR(parent);
+//                    }
                 }
             }
         } catch (Exception e) {
@@ -651,6 +661,7 @@ public class LockFreeRTree implements Runnable {
                             this.scan();
                             System.out.println("Thread ID: " + Thread.currentThread().getId() + " Completed Scan in Addition");
                             atomicInteger.compareAndSet(newAtomicValue, newAtomicValue + 1);
+//                            this.add(new Point(4,5));
                             break;
                         }
                     } else if (atomicInteger.get() >= 17)
@@ -673,17 +684,16 @@ public class LockFreeRTree implements Runnable {
 //                System.out.println("Thread ID : " + Thread.currentThread().getId() + " Atomic counter " + atomicInteger);
                 while (true) {
                     int curatomicvalue = atomicInteger.get();
-                    if (curatomicvalue >= 17 && curatomicvalue % 2 == 1) {
+                    if (curatomicvalue >= 17) {
                         newAtomicValue = curatomicvalue+1;
                         if (atomicInteger.compareAndSet(curatomicvalue, newAtomicValue)) {
 //                            this.scan();
                             this.delete(temp);
 //                            if(atomicInteger.get()==30)
-                            if(curatomicvalue==21)
-                                this.add(new Point(4,5));
-                                this.scan();
                             System.out.println("Thread ID: " + Thread.currentThread().getId() + " Completed delete after additions and 1 scan");
-                            atomicInteger.compareAndSet(newAtomicValue, newAtomicValue + 1);
+                            atomicInteger.compareAndSet(atomicInteger.get(), atomicInteger.get()+1);
+                            if(atomicInteger.get()==27)
+                                this.scan();
                             break;
                         }
                     }
