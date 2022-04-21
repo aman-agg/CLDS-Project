@@ -679,6 +679,8 @@ public class LockFreeRTree implements Runnable {
 //                            this.scan();
                             this.delete(temp);
 //                            if(atomicInteger.get()==30)
+                            if(curatomicvalue==21)
+                                this.add(new Point(4,5));
                                 this.scan();
                             System.out.println("Thread ID: " + Thread.currentThread().getId() + " Completed delete after additions and 1 scan");
                             atomicInteger.compareAndSet(newAtomicValue, newAtomicValue + 1);
