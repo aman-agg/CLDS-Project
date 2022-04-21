@@ -32,20 +32,22 @@ public class LockFreeRTree implements Runnable{
         root.set(null);
     }
     public void add(Point newPoint) {
-        if (this.contains(newPoint) == true) {
-            System.out.println("Point present in tree");
+        if (newPoint == null)
+        {
+            System.out.println("Point to be added is not valid");
             return;
         }
-
-        System.out.println("Thread Id : "+Thread.currentThread().getId()+ " Point not present. Trying to add point "+newPoint.toString());
-            try {
+          try {
                 boolean restartAddition = true;
                 while (restartAddition) {
-                    boolean additionSuccessfull = false;
-                    if (newPoint == null)
-                    {
+                    if (this.contains(newPoint) == true) {
+                        System.out.println("Point present in tree");
                         return;
                     }
+
+                    System.out.println("Thread Id : "+Thread.currentThread().getId()+ " Point not present. Trying to add point "+newPoint.toString());
+
+                    boolean additionSuccessfull = false;
                     if (root.get() == null) {
                         System.out.println("Case of NULL root (Addition)");
                         Node newNode = new Node();
@@ -66,6 +68,7 @@ public class LockFreeRTree implements Runnable{
                         boolean emptyLeaf = false;
                         boolean fullLeaf = false;
                         boolean internal = false;
+                        Node newCurNode = curNode.getCopy();
                         if (curNode == null) {
                             traversal = false;
                             break;
@@ -73,33 +76,18 @@ public class LockFreeRTree implements Runnable{
 
                         // Case of empty leaf, add a new point
                         if (curNode.leftEntry == null || curNode.rightEntry == null) {
-                            Node newNode = curNode.getCopy();
-                            if (newNode.leftEntry == null) {
-                                newNode.leftEntry = new Entry();
-                                newNode.leftEntry.lowerBottom = new Point(newPoint);
+                            emptyLeaf = true;
+                            newCurNode = curNode.getCopy();
+                            if (newCurNode.leftEntry == null) {
+                                newCurNode.leftEntry = new Entry();
+                                newCurNode.leftEntry.lowerBottom = new Point(newPoint);
                             } else {
-                                newNode.rightEntry = new Entry();
-                                newNode.rightEntry.lowerBottom = new Point(newPoint);
+                                newCurNode.rightEntry = new Entry();
+                                newCurNode.rightEntry.lowerBottom = new Point(newPoint);
                             }
-                            if(parent == null && root.compareAndSet(curNode, newNode))
-                            {
-                                // CASE of only one leaf node that is root
-                                additionSuccessfull = true;
-                                restartAddition = false;
-                                traversal= false;
-                            }
-                            else if(parent!=null && parentChildLinkLeft
-                                    ? leftChildUpdater.compareAndSet(parent, curNode, newNode)
-                                    : rightChildUpdater.compareAndSet(parent, curNode, newNode))
-                            {
-                                additionSuccessfull = true;
-                                restartAddition =false;
-                                traversal = false;
-                            }
-                            break;
                         }
                         // check for a internal node or a full leaf
-                        if (curNode.leftEntry != null && curNode.rightEntry != null) {
+                        else {
                             // distinguish between internal node and a full leaf node using upperTop coordinates or using child links
                             if (curNode.leftEntry.upperTop == null && curNode.rightEntry.upperTop == null)
                                 fullLeaf = true;
@@ -126,7 +114,7 @@ public class LockFreeRTree implements Runnable{
                             long leftDist = calculatePointDistance(newPoint, curNode.leftEntry.lowerBottom);
                             long righDist = calculatePointDistance(newPoint, curNode.rightEntry.lowerBottom);
 
-                            Node newCurNode = curNode.getCopy();
+
                             // add existing left/right point and the new point in a left/right child of current node
 
                             Node newCombinedChild = new Node();
@@ -160,23 +148,21 @@ public class LockFreeRTree implements Runnable{
                             else {
                                 newCurNode.leftChild = newSingularChild;
                                 newCurNode.leftEntry = calculateMBR(newSingularChild.leftEntry, newSingularChild.rightEntry);
-
                             }
-                            // CAS
-                            if(parent == null && root.compareAndSet(curNode, newCurNode))
-                            {
+                        }
+                        // CAS
+                        if(emptyLeaf || fullLeaf) {
+                            if (parent == null && root.compareAndSet(curNode, newCurNode)) {
                                 // CASE of only one leaf node that is root
                                 additionSuccessfull = true;
                                 restartAddition = false;
-                                traversal= false;
-                            }
-                            else if(parent!=null && parentChildLinkLeft
+                                traversal = false;
+                            } else if (parent != null && parentChildLinkLeft
                                     ? leftChildUpdater.compareAndSet(parent, curNode, newCurNode)
-                                    : rightChildUpdater.compareAndSet(parent, curNode, newCurNode))
-                            {
-                                System.out.println("Thread ID : " + Thread.currentThread().getId()+" Addition Successful - "+newPoint.toString());
+                                    : rightChildUpdater.compareAndSet(parent, curNode, newCurNode)) {
+                                System.out.println("Thread ID : " + Thread.currentThread().getId() + " Addition Successful - " + newPoint.toString());
                                 additionSuccessfull = true;
-                                restartAddition =false;
+                                restartAddition = false;
                                 traversal = false;
                             }
                         }
@@ -189,7 +175,6 @@ public class LockFreeRTree implements Runnable{
             } finally {
                 System.out.println("Addition Execution completed by " + Thread.currentThread().getId());
             }
-
     }
     public void updateMBR(Node curNode)
     {
