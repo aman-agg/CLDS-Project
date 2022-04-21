@@ -397,15 +397,17 @@ public class LockFreeRTree implements Runnable{
 
     public void delete(Point delPoint) {
 
-        if (this.contains(delPoint) == false) {
-            System.out.println("Thread ID : "+ Thread.currentThread().getId()+ " Deletion: Point not present in tree");
-            return;
-        }
-        System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion: Point present. Trying to del point " + delPoint.toString());
 
         try {
+
             boolean restartDeletion = true;
             while (restartDeletion) {
+                if (this.contains(delPoint) == false) {
+                    System.out.println("Thread ID : "+ Thread.currentThread().getId()+ " Deletion: Point not present in tree");
+                    return;
+                }
+                System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion: Point present. Trying to del point " + delPoint.toString());
+
                 Node curr = root.get();
                 System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion restarted " + delPoint.toString());
                 Node forCas = root.get();
@@ -416,6 +418,9 @@ public class LockFreeRTree implements Runnable{
                 Node parent = null;
                 Boolean isParentChildLinkLeft = null;  //null if current node is root
                 while (true) {
+                    if(curr == null){
+                        break;
+                    }
                     if (curr.leftEntry != null && curr.leftEntry.isPoint() && curr.leftChild == null) {
                         break;
                     }
@@ -432,11 +437,13 @@ public class LockFreeRTree implements Runnable{
                         curr = curr.rightChild;
                     }
                 }
+
                 System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion: Traversal completed ");
 //                printEntry(curr.leftEntry);
 //                printEntry(curr.rightEntry);
                 boolean fullLeaf = false;
                 boolean emptyLeaf = false;
+
 //                if(parent != null) {
 //                    isParentChildLinkLeft = parent.leftChild.equals(curr);
 //                }
@@ -460,7 +467,7 @@ public class LockFreeRTree implements Runnable{
                     else{
                         break;
                     }
-                } else {
+                } else if(curr.leftEntry != null || curr.rightEntry != null){
                     //Empty Leaf case
                     System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion: empty leaf case ");
                     emptyLeaf = true;
@@ -475,6 +482,14 @@ public class LockFreeRTree implements Runnable{
                 }
                 else if(parent == null){
                     continue;
+                }
+                else{
+                    if(parent != null && isParentChildLinkLeft
+                            ? leftChildUpdater.compareAndSet(parent,curr,newNode)
+                            : rightChildUpdater.compareAndSet(parent,curr,newNode)){
+                        newNode.parent = parent;
+                        restartDeletion = false;
+                    }
                 }
                 if (fullLeaf) {
                     System.out.println("Thread ID : "+ Thread.currentThread().getId()+ " Deletion: Full leaf case");
@@ -509,8 +524,6 @@ public class LockFreeRTree implements Runnable{
             }
 
         }
-
-
 
     public boolean checkPointWithEntry(Entry rect, Point p) {
 
@@ -564,7 +577,6 @@ public class LockFreeRTree implements Runnable{
 //        while(threadSafeUniqueNumbers.contains(opInd) == false){
 //            opInd = rand.nextInt(operations.length);
 //        }
-
         if(set.contains(opInd)){
             System.out.println("Thread ID : "+ Thread.currentThread().getId()+ " Already in set");
         }
