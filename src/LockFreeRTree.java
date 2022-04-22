@@ -427,34 +427,46 @@ public class LockFreeRTree implements Runnable {
     }
 
     public void delete(Point delPoint) {
-
-
         try {
-
             boolean restartDeletion = true;
             while (restartDeletion) {
-                if (this.contains(delPoint) == false) {
-                    System.out.println("Thread ID : " + Thread.currentThread().getId() + " Deletion: Point not present in tree");
-                    return;
-                }
+//                if (this.contains(delPoint) == false) {
+//                    System.out.println("Thread ID : " + Thread.currentThread().getId() + " Deletion: Point not present in tree");
+//                    return;
+//                }
                 System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion: Point present. Trying to del point " + delPoint.toString());
-
                 Node curr = root.get();
-                Node forCas = root.get();
+//                System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion restarted " + delPoint.toString());
+
                 if (delPoint == null) {
                     return;
                 }
                 Node newNode = null;
                 Node parent = null;
-                boolean isParentChildLinkLeft = true;  //null if current node is root
+
                 boolean compression_false = false;
                 boolean emptyLeaf = false;
                 boolean fullLeaf = false;
                 boolean internal = false;
-                boolean traversal = true;
-                while (traversal) {
-                    System.out.println("Traversal started");
+                boolean isParentChildLinkLeft = true;  //null if current node is root
+                boolean foundPoint = false;
+                Queue<Node> q = new LinkedList<>();
+                Queue<Boolean> parentLinks = new LinkedList<>();
+                if (root.get() == null) {
+                    System.out.println("Root is null, cannot delete");
+                    return;
+                }
+                q.add(root.get());
+                parentLinks.add(false);
+                while (q.size() != 0) {
+                    curr = q.poll();
+                    Node leftChildOfCurNode = curr.leftChild;
+                    Node rightChildOfCurNode = curr.rightChild;
+                    parent = curr.parent;
+                    isParentChildLinkLeft = parentLinks.poll();
                     if (curr == null) {
+//                        System.out.println(foundPoint);
+//                        curr.printNode();
                         break;
                     }
                     if (curr.leftEntry == null || curr.rightEntry == null) {
@@ -463,82 +475,83 @@ public class LockFreeRTree implements Runnable {
                     // check for a internal node or a full leaf
                     else {
                         // distinguish between internal node and a full leaf node using upperTop coordinates or using child links
-                        if (curr.leftEntry.upperTop == null && curr.rightEntry.upperTop == null)
+                        if (curr.leftEntry.upperTop == null && curr.rightEntry.upperTop == null && curr.leftChild == null && curr.rightChild == null)
                             fullLeaf = true;
                         else
                             internal = true;
                     }
-//                    if(!curr.leftEntry.isPoint() && !curr.rightEntry.isPoint()) {
-////                        System.out.println("Compression started");
-////                        curr.printNode();
+                    if(emptyLeaf || fullLeaf) {
+                        if (curr.leftEntry != null && delPoint.equals(curr.leftEntry.lowerBottom)) {
+                            //Point found
+                            foundPoint = true;
+                            System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion: found point "+delPoint.toString());
+                            break;
+                        }
+                        if (curr.rightEntry != null && delPoint.equals(curr.rightEntry.lowerBottom)) {
+                            //Point found
+                            System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion: found point "+delPoint.toString());
+                            foundPoint = true;
+                            break;
+                        }
+                    }
+                    else {
 //                        if (checkAndCompressSkewedTree(curr, parent, isParentChildLinkLeft)) {
-////                            System.out.println("Compression completed");
 //                            compression_false = true;
 //                            break;
 //                        }
-//                    }
-                    if(internal) {
-                        if (checkPointInMBR(curr.leftEntry, delPoint)) {
-                            parent = curr;
-                            curr = curr.leftChild;
-                            isParentChildLinkLeft = true;
-                        } else if(checkPointInMBR(curr.rightEntry, delPoint)){
-                            parent = curr;
-                            isParentChildLinkLeft = false;
-                            curr = curr.rightChild;
+//                         Curr node is Internal Node
+                        if (leftChildOfCurNode != null) {
+                            parentLinks.add(true);
+                            q.add(leftChildOfCurNode);
                         }
-//                        else
-//                            break;
+                        if (rightChildOfCurNode != null) {
+                            parentLinks.add(false);
+                            q.add(rightChildOfCurNode);
+                        }
                     }
-                    else
-                        break;
                 }
-
+                if(!foundPoint){
+                    break;
+                }
                 if (compression_false)
                     continue;
 
-                System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion: Traversal completed ");
-//                printEntry(curr.leftEntry);
-//                printEntry(curr.rightEntry);
-//                boolean fullLeaf = false;
-//                boolean emptyLeaf = false;
-
-//                if(parent != null) {
-//                    isParentChildLinkLeft = parent.leftChild.equals(curr);
-//                }
-//                else{
-//                    System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion: root empty leaf case");
-//                    isParentChildLinkLeft = forCas.leftEntry.lowerBottom.equals(delPoint);
-//                }
+//                System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion: Traversal completed ");
                 System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion: Traversal ended " + isParentChildLinkLeft);
                 //This if is to create the newNode for replacement
                 if (fullLeaf) {
                     //full leaf case
                     System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion: Full leaf case ");
-//                    fullLeaf = true;
                     newNode = curr.getCopy();
+                    if(curr.leftEntry == null || curr.rightEntry == null){
+                        continue;
+                    }
                     if (curr.leftEntry.lowerBottom.equals(delPoint)) {
                         newNode.leftEntry = null;
                     } else if (curr.rightEntry.lowerBottom.equals(delPoint)) {
                         newNode.rightEntry = null;
                     } else {
+                        System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion: full leaf case, SHOULD NOT BE CALLED");
                         continue;
                     }
                 } else if (emptyLeaf) {
                     //Empty Leaf case
+                    if(curr.leftEntry == null && curr.rightEntry == null){
+                        continue;
+                    }
                     System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion: empty leaf case ");
                     newNode = null;
                 }
                 else
                     continue;
                 System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion: Point present. Found leaf case " + fullLeaf);
-                if (parent == null && root.compareAndSet(forCas, newNode)) {
+                if (parent == null && root.compareAndSet(curr, newNode)) {
                     //current node is root node
                     System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion: Parent null cas ");
                     restartDeletion = false;
                     return;
                 } else if (parent != null) {
-                    System.out.println("Thread ID : " + Thread.currentThread().getId() + " Deletion: Parent not null cas");
+                    System.out.println("Thread ID : " + Thread.currentThread().getId() + " Deletion: Parent not null CAS");
                     if (parent != null && isParentChildLinkLeft
                             ? leftChildUpdater.compareAndSet(parent, curr, newNode)
                             : rightChildUpdater.compareAndSet(parent, curr, newNode)) {
