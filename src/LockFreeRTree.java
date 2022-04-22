@@ -246,7 +246,6 @@ public class LockFreeRTree implements Runnable {
         if (leftChildOfCurNode != null && rightChildOfCurNode != null)
             return false;
 
-        // case of instability
         if (leftChildOfCurNode == null && rightChildOfCurNode == null) {
             // delete the parent's subtree
             if (parent == null)
@@ -459,6 +458,9 @@ public class LockFreeRTree implements Runnable {
                 q.add(root.get());
                 parentLinks.add(false);
                 while (q.size() != 0) {
+                    emptyLeaf = false;
+                    fullLeaf = false;
+                    internal = false;
                     curr = q.poll();
                     Node leftChildOfCurNode = curr.leftChild;
                     Node rightChildOfCurNode = curr.rightChild;
@@ -510,11 +512,12 @@ public class LockFreeRTree implements Runnable {
                         }
                     }
                 }
-                if(!foundPoint){
-                    break;
-                }
                 if (compression_false)
                     continue;
+                if(!foundPoint){
+                    System.out.println("Thread ID : " + Thread.currentThread().getId()+" FOUND POINT FALSE ");
+                    break;
+                }
 
 //                System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion: Traversal completed ");
                 System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion: Traversal ended " + isParentChildLinkLeft);
@@ -530,9 +533,6 @@ public class LockFreeRTree implements Runnable {
                         newNode.leftEntry = null;
                     } else if (curr.rightEntry.lowerBottom.equals(delPoint)) {
                         newNode.rightEntry = null;
-                    } else {
-                        System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion: full leaf case, SHOULD NOT BE CALLED");
-                        continue;
                     }
                 } else if (emptyLeaf) {
                     //Empty Leaf case
@@ -542,26 +542,24 @@ public class LockFreeRTree implements Runnable {
                     System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion: empty leaf case ");
                     newNode = null;
                 }
-                else
-                    continue;
-                System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion: Point present. Found leaf case " + fullLeaf);
+//                System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion: Point present. Found leaf case " + fullLeaf);
                 if (parent == null && root.compareAndSet(curr, newNode)) {
                     //current node is root node
                     System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion: Parent null cas ");
                     restartDeletion = false;
                     return;
-                } else if (parent != null) {
-                    System.out.println("Thread ID : " + Thread.currentThread().getId() + " Deletion: Parent not null CAS");
+                } else
                     if (parent != null && isParentChildLinkLeft
                             ? leftChildUpdater.compareAndSet(parent, curr, newNode)
                             : rightChildUpdater.compareAndSet(parent, curr, newNode)) {
+                        System.out.println("Thread ID : " + Thread.currentThread().getId() + " Deletion: Parent not null CAS");
                         restartDeletion = false;
                         return;
                     }
 //                    if (!restartDeletion) {
 //                        //updateMBR(newNode);
 //                    }
-                }
+
             }
         } catch (Exception e) {
             e.printStackTrace();
