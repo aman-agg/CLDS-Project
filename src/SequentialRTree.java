@@ -378,13 +378,7 @@ public class SequentialRTree {
                 curr = curr.rightChild;
             }
         }
-//            System.out.println("Leaf node which contains the delPoint----------");
-//            System.out.print("Left Entry: ");
-//            printEntry(curr.leftEntry);
-//            System.out.print("Right Entry: ");
-//            printEntry(curr.rightEntry);
-//            System.out.println("------------");
-        //Found the node to be deleted
+
         boolean fullLeaf = false;
         boolean emptyLeaf = false;
         if (curr.leftEntry != null && curr.rightEntry != null) {

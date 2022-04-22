@@ -230,12 +230,11 @@ public class LockFreeRTree implements Runnable {
             e.printStackTrace();
             System.exit(2);
         } finally {
-//            System.out.println("Addition Execution completed by " + Thread.currentThread().getId());
+            System.out.println("Addition Execution completed by " + Thread.currentThread().getId());
         }
     }
 
     public boolean checkAndCompressSkewedTree(Node curNode, Node parent, boolean parentChildLinkLeft) {
-//        System.out.println("Compression called " + curNode);
         if (curNode == null)
             return true;
 
@@ -304,12 +303,6 @@ public class LockFreeRTree implements Runnable {
             if (!curNode.rightEntry.equals(expectedMBR))
                 curNode.rightEntry = expectedMBR;
         }
-//            if (isLeftChildEmptyLeaf && isRightChildEmptyLeaf) {
-//                curNode.leftEntry = curNode.leftChild.leftEntry == null ? curNode.leftChild.rightEntry : curNode.leftChild.leftEntry;
-//                curNode.rightEntry = curNode.rightChild.leftEntry == null ? curNode.rightChild.rightEntry : curNode.rightChild.leftEntry;
-//                curNode.leftChild = null;
-//                curNode.rightChild = null;
-//            }
         updateMBR(curNode.parent);
     }
 
@@ -379,7 +372,6 @@ public class LockFreeRTree implements Runnable {
         }
 
         return ans;
-
     }
 
     public int findMinMBRWhileAdd(Point newPoint, Node curNode) {
@@ -429,10 +421,6 @@ public class LockFreeRTree implements Runnable {
         try {
             boolean restartDeletion = true;
             while (restartDeletion) {
-//                if (this.contains(delPoint) == false) {
-//                    System.out.println("Thread ID : " + Thread.currentThread().getId() + " Deletion: Point not present in tree");
-//                    return;
-//                }
                 System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion: Point present. Trying to del point " + delPoint.toString());
                 Node curr = root.get();
 //                System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion restarted " + delPoint.toString());
@@ -497,10 +485,10 @@ public class LockFreeRTree implements Runnable {
                         }
                     }
                     else {
-//                        if (checkAndCompressSkewedTree(curr, parent, isParentChildLinkLeft)) {
-//                            compression_false = true;
-//                            break;
-//                        }
+                        if (checkAndCompressSkewedTree(curr, parent, isParentChildLinkLeft)) {
+                            compression_false = true;
+                            break;
+                        }
 //                         Curr node is Internal Node
                         if (leftChildOfCurNode != null) {
                             parentLinks.add(true);
@@ -595,7 +583,7 @@ public class LockFreeRTree implements Runnable {
 
     @Override
     public void run() {
-
+            //Different test cases
 //        int[] operations = {1,1,1,2,1,2,1,2};
 //        int[][] inputs = {{1,1},{2,2},{3,3},{2,2},{4,4},{2,2},{5,5},{3,3}};
         int[] operations = {1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2}; // for full leaf non root deletion
