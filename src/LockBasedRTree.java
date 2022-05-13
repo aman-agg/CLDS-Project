@@ -343,13 +343,69 @@ public class LockBasedRTree implements Runnable{
             }
         }
     }
+    public void rangeSearch(Point p1, Point p2){
+        System.out.println("Range Search Started");
+        lock.lock();
+        try {
+            Entry range = new Entry();
+            range.lowerBottom = p1;
+            range.upperTop = p2;
+            ArrayList<Point> rangePoints = new ArrayList<>();
+            Queue<Node> q = new LinkedList<>();
+            q.add(root);
+//            int level = 0;
+//            System.out.println("Level " + level);
+            while (q.size() != 0) {
+                Node curr = q.poll();
+                if (curr.leftEntry != null) {
+                    if (curr.leftEntry.upperTop == null) {
+                        if (checkPointInMBR(range, curr.leftEntry.lowerBottom)) {
+                            rangePoints.add(curr.leftEntry.lowerBottom);
+                        }
+                    } else {
+                        if (compareMBR(range, curr.leftEntry)) {
+                            q.add(curr.leftChild);
+                        }
+                    }
+                }
+                if (curr.rightEntry != null) {
+                    if (curr.rightEntry.upperTop == null) {
+                        if (checkPointInMBR(range, curr.rightEntry.lowerBottom)) {
+                            rangePoints.add(curr.rightEntry.lowerBottom);
+                        }
+                    } else {
+                        if (compareMBR(range, curr.rightEntry)) {
+                            q.add(curr.rightChild);
+                        }
+                    }
+                }
+            }
+            System.out.println("Range Points: ");
+            for (Point curr : rangePoints) {
+                System.out.println(curr.x + " " + curr.y);
+            }
+            System.out.println();
+        }
+        finally{
+            lock.unlock();
+        }
+    }
+    private boolean compareMBR(Entry range, Entry rect) {
+        if(range.upperTop.getY() < rect.lowerBottom.getY() || range.lowerBottom.getY() > rect.upperTop.getY()){
+            return false;
+        }
+        if(range.upperTop.getX() < rect.lowerBottom.getX() || range.lowerBottom.getX() > rect.upperTop.getX()){
+            return false;
+        }
+        return true;
+    }
 
     public void delete(Point delPoint) {
         if (this.contains(delPoint) == false) {
             System.out.println("Point not present in tree");
             return;
         }
-        System.out.println("Breakpoint 1");
+//        System.out.println("Breakpoint 1");
         lock.lock();
         try {
 
@@ -484,7 +540,8 @@ public class LockBasedRTree implements Runnable{
         System.out.println("2. Delete (x y)");
         System.out.println("3. Print Tree");
         System.out.println("4. Contains");
-        System.out.println("5. Exit");
+        System.out.println("5. Range Search");
+        System.out.println("6. Exit");
         int n = 0;
         while(n > 5 || n < 1){
             System.out.print("Choose operation number: ");
@@ -495,8 +552,8 @@ public class LockBasedRTree implements Runnable{
     }
     @Override
     public void run() {
-        int[] operations = {1,1,1,2,1,2,1};
-        int[][] inputs = {{1,1},{2,2},{3,3},{1,1},{2,4},{2,2},{1,4}};
+        int[] operations = {1,1,1,2,1,2,1,5};
+        int[][] inputs = {{1,1},{1,2},{3,3},{1,4},{2,4},{2,2},{1,4},{}};
 //        int[] operations = {1,1,1,2,1,2,1};
 //        int[][] inputs = {{1,1},{2,2},{3,3},{1,1},{2,4},{2,2},{1,4}};
 //        int[] operations = {1,1,1,1,1,1,1};
@@ -506,10 +563,11 @@ public class LockBasedRTree implements Runnable{
         int opInd = rand.nextInt(operations.length);
         System.out.println("Operation index 1: "+opInd);
 
-        if(counter > 7){
+        if(counter > 8){
             System.out.println("Scan");
             this.scan();
-            System.out.println(Thread.currentThread().getId());
+
+//            System.out.println(Thread.currentThread().getId());
         }
         else if(set.contains(opInd)){
             System.out.println("Already in set");
@@ -527,6 +585,9 @@ public class LockBasedRTree implements Runnable{
                 System.out.println("Stage 1 Addition: "+temp.toString());
                 this.add(temp);
                 this.scan();
+                Point a = new Point(0,0);
+                Point b = new Point(2, 2);
+                this.rangeSearch(a,b);
                 System.out.println("Thread ID: " + Thread.currentThread().getId());
                 counter++;
             } else if (operation == 2) {
@@ -549,7 +610,14 @@ public class LockBasedRTree implements Runnable{
                 System.out.println();
                 System.out.println(this.contains(new Point(x,y)));
                 System.out.println(Thread.currentThread().getId());
-            } else if (operation == 5) {
+            }
+             else if (operation == 5) {
+                 Point a = new Point(0,0);
+                 Point b = new Point(2, 2);
+                this.rangeSearch(a,b);
+                counter++;
+            }
+            else if (operation == 6) {
                 System.out.println("Thread ID: " + Thread.currentThread().getId());
             } else {
                 System.out.println("Thread ID: " + Thread.currentThread().getId());

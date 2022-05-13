@@ -16,7 +16,8 @@ public class Main {
         System.out.println("2. Delete (x y)");
         System.out.println("3. Print Tree");
         System.out.println("4. Contains");
-        System.out.println("5. Exit");
+        System.out.println("5. Range Search");
+        System.out.println("6. Exit");
         int n = 0;
         while(n > 5 || n < 1){
             System.out.print("Choose operation number: ");
@@ -56,6 +57,19 @@ public class Main {
                 System.out.println(rTree.contains(new Point(x,y)));
             }
             else if(operation == 5){
+                System.out.print("Point LowerBottom point of range: ");
+                int x = sc.nextInt();
+                int y = sc.nextInt();
+                Point a = new Point(x,y);
+                System.out.println();
+                System.out.print("Point UpperTop point of range: ");
+                x = sc.nextInt();
+                y = sc.nextInt();
+                Point b = new Point(x,y);
+                System.out.println();
+                rTree.rangeSearch(a,b);
+            }
+            else if(operation == 6){
                 break;
             }
             else{
@@ -66,8 +80,8 @@ public class Main {
     public static void runLockBasedRTree(){
         //To run the LockBased Version of R tree
         ReentrantLock sharedLock = new ReentrantLock();
-        ExecutorService executorService = Executors.newFixedThreadPool(5);
-        for(int i = 0;i<5;i++){
+        ExecutorService executorService = Executors.newFixedThreadPool(10);
+        for(int i = 0;i<10;i++){
             executorService.submit(new LockBasedRTree(sharedLock));
         }
 
@@ -91,8 +105,8 @@ public class Main {
     }
     public static void main(String[] args) throws java.io.IOException{
 	// write your code here
-//        runLockBasedRTree();
+        runLockBasedRTree();
 //        runSequentialRTree();
-        runLockFreeRTree();
+//        runLockFreeRTree();
     }
 }
