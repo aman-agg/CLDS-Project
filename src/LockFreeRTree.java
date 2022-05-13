@@ -92,7 +92,13 @@ public class LockFreeRTree implements Runnable {
         }
         try {
             boolean restartAddition = true;
+            int count=0;
             while (restartAddition) {
+                count++;
+                if(count>40)
+                {
+                    break;
+                }
                 if (this.contains(newPoint) == true) {
                     System.out.println("Point present in tree");
                     return;
@@ -223,7 +229,7 @@ public class LockFreeRTree implements Runnable {
                 if (additionSuccessfull) {
                     // update MBRs of all ancestors
                     updateMBR(curNode);
-                    unmark(newPoint); // returns if point is not found
+                    //unmark(newPoint); // returns if point is not found
                 }
             }
         } catch (Exception e) {
@@ -361,6 +367,7 @@ public class LockFreeRTree implements Runnable {
 
 
     public boolean checkAndCompressEmptyInternalNodes(Node curNode, Node parent, boolean parentChildLinkLeft) {
+        System.out.println("compression of internal node started");
         if (curNode == null)
             return true;
 
@@ -536,8 +543,8 @@ public class LockFreeRTree implements Runnable {
                 return 1;
         }
 
-        long leftMBRArea = calculateNewRectArea(newPoint, curNode.leftEntry.lowerBottom, curNode.leftEntry.upperTop);
-        long rightMBRArea = calculateNewRectArea(newPoint, curNode.rightEntry.lowerBottom, curNode.rightEntry.upperTop);
+        long leftMBRArea = curNode.leftChild!=null ? calculateNewRectArea(newPoint, curNode.leftEntry.lowerBottom, curNode.leftEntry.upperTop) : Long.MAX_VALUE;
+        long rightMBRArea = curNode.rightChild!=null ? calculateNewRectArea(newPoint, curNode.rightEntry.lowerBottom, curNode.rightEntry.upperTop) : Long.MAX_VALUE;
 
         return leftMBRArea <= rightMBRArea ? 0 : 1; //
 
