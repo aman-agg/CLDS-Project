@@ -105,8 +105,8 @@ public class Main {
     }
     public static void main(String[] args) throws java.io.IOException{
 	// write your code here
-        runLockBasedRTree();
+//        runLockBasedRTree();
 //        runSequentialRTree();
-//        runLockFreeRTree();
+        runLockFreeRTree();
     }
 }
