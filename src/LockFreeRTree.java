@@ -116,6 +116,7 @@ public class LockFreeRTree implements Runnable {
                     Node newNode = new Node();
                     newNode.leftEntry = new Entry();
                     newNode.leftEntry.lowerBottom = new Point(newPoint);
+                    newNode.leftEntry.mark = true;
                     if (root.compareAndSet(null, newNode)) {
                         additionSuccessfull = true;
                         restartAddition = false;
@@ -129,6 +130,7 @@ public class LockFreeRTree implements Runnable {
                 if(additionSuccessfull)
                     traversal=false;
                 while (traversal) {
+//                    System.out.println("Thread ID: "+Thread.currentThread().getId()+" traversal restarted");
                     boolean emptyLeaf = false;
                     boolean fullLeaf = false;
                     boolean internal = false;
@@ -144,9 +146,11 @@ public class LockFreeRTree implements Runnable {
                         if (newCurNode.leftEntry == null) {
                             newCurNode.leftEntry = new Entry();
                             newCurNode.leftEntry.lowerBottom = new Point(newPoint);
+                            newCurNode.leftEntry.mark = true;
                         } else {
                             newCurNode.rightEntry = new Entry();
                             newCurNode.rightEntry.lowerBottom = new Point(newPoint);
+                            newCurNode.rightEntry.mark = true;
                         }
                     }
                     // check for a internal node or a full leaf
@@ -188,9 +192,12 @@ public class LockFreeRTree implements Runnable {
 
                         newCombinedChild.leftEntry = new Entry();
                         newCombinedChild.leftEntry.lowerBottom = new Point(leftDist < righDist ? newCurNode.leftEntry.lowerBottom : newCurNode.rightEntry.lowerBottom);
+                        newCombinedChild.leftEntry.mark = leftDist < righDist ? newCurNode.leftEntry.mark : newCurNode.rightEntry.mark;
+
 
                         newCombinedChild.rightEntry = new Entry();
                         newCombinedChild.rightEntry.lowerBottom = new Point(newPoint);
+                        newCombinedChild.rightEntry.mark = true;
 
                         if (leftDist < righDist) {
                             newCurNode.leftChild = newCombinedChild;
@@ -205,6 +212,7 @@ public class LockFreeRTree implements Runnable {
 
                         newSingularChild.leftEntry = new Entry();
                         newSingularChild.leftEntry.lowerBottom = new Point(leftDist < righDist ? newCurNode.rightEntry.lowerBottom : newCurNode.leftEntry.lowerBottom);
+                        newSingularChild.leftEntry.mark = leftDist < righDist ? newCurNode.rightEntry.mark : newCurNode.leftEntry.mark ;
 
                         if (leftDist < righDist) {
                             newCurNode.rightChild = newSingularChild;
@@ -221,7 +229,7 @@ public class LockFreeRTree implements Runnable {
                             System.out.println("Thread ID : " + Thread.currentThread().getId() + " Addition Successful root is leaf- " + newPoint.toString());
                             additionSuccessfull = true;
                             restartAddition = false;
-                        } else if (parent != null && (parentChildLinkLeft
+                        } else if ((parent != null) && (parentChildLinkLeft
                                 ? leftChildUpdater.compareAndSet(parent, curNode, newCurNode)
                                 : rightChildUpdater.compareAndSet(parent, curNode, newCurNode))) {
                             System.out.println("Thread ID : " + Thread.currentThread().getId() + " Addition Successful internal- " + newPoint.toString());
@@ -295,16 +303,15 @@ public class LockFreeRTree implements Runnable {
                             internal = true;
                     }
                     if (emptyLeaf || fullLeaf) {
+                        System.out.println("Thread Id : " + Thread.currentThread().getId() + " Unmarking: found point " + addedPoint.toString());
                         if (curr.leftEntry != null && addedPoint.equals(curr.leftEntry.lowerBottom)) {
                             //Point found
                             foundPoint = true;
-                            System.out.println("Thread Id : " + Thread.currentThread().getId() + " Unmarking: found point " + addedPoint.toString());
                             break;
                         }
                         if (curr.rightEntry != null && addedPoint.equals(curr.rightEntry.lowerBottom)) {
                             //Point found
                             foundPoint = true;
-                            System.out.println("Thread Id : " + Thread.currentThread().getId() + " Unmarking: found point " + addedPoint.toString());
                             break;
                         }
                     } else {
@@ -344,15 +351,15 @@ public class LockFreeRTree implements Runnable {
                         newNode.rightEntry.mark = false;
                     }
                 }
-//                System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion: Point present. Found leaf case " + fullLeaf);
+//                System.out.println("Thread Id : " + Thread.currentThread().getId() + " Unmarking: isprentchildlinkleft value - " + isParentChildLinkLeft);
                 if (parent == null && root.compareAndSet(curr, newNode)) {
                     //current node is root node
                     System.out.println("Thread Id : " + Thread.currentThread().getId() + " Unmarking : Parent null cas ");
                     restartUnmark = false;
                     return;
-                } else if (parent != null && isParentChildLinkLeft
+                } else if ((parent != null) && (isParentChildLinkLeft
                         ? leftChildUpdater.compareAndSet(parent, curr, newNode)
-                        : rightChildUpdater.compareAndSet(parent, curr, newNode)) {
+                        : rightChildUpdater.compareAndSet(parent, curr, newNode))) {
                     System.out.println("Thread ID : " + Thread.currentThread().getId() + " Unmarking: Parent not null CAS");
                     restartUnmark = false;
                     return;
@@ -363,6 +370,7 @@ public class LockFreeRTree implements Runnable {
 
             }
         } catch (Exception e) {
+            System.out.println("Thread ID: "+Thread.currentThread().getId()+" throwed the following exception");
             e.printStackTrace();
         } finally {
             System.out.println("Unmarking Execution completed by " + Thread.currentThread().getId());
@@ -372,7 +380,7 @@ public class LockFreeRTree implements Runnable {
 
 
     public boolean checkAndCompressEmptyInternalNodes(Node curNode, Node parent, boolean parentChildLinkLeft) {
-        System.out.println("compression of internal node started");
+        System.out.println("Thread ID: " + Thread.currentThread().getId()+"compression of internal node started" + curNode);
         if (curNode == null)
             return true;
 
@@ -539,11 +547,11 @@ public class LockFreeRTree implements Runnable {
 
         // check if new point lies in left MBR
 
-        if (curNode.leftEntry != null) {
+        if (curNode.leftChild != null) {
             if (pointInRectOrNot(newPoint, curNode.leftEntry.lowerBottom, curNode.leftEntry.upperTop))
                 return 0;
         }
-        if (curNode.rightEntry != null) {
+        if (curNode.rightChild != null) {
             if (pointInRectOrNot(newPoint, curNode.rightEntry.lowerBottom, curNode.rightEntry.upperTop))
                 return 1;
         }
@@ -631,13 +639,13 @@ public class LockFreeRTree implements Runnable {
                             internal = true;
                     }
                     if (emptyLeaf || fullLeaf) {
-                        if (curr.leftEntry != null && delPoint.equals(curr.leftEntry.lowerBottom)) {
+                        if ((curr.leftEntry != null && delPoint.equals(curr.leftEntry.lowerBottom) && curr.leftEntry.mark==false)) {
                             //Point found
                             foundPoint = true;
                             System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion: found point " + delPoint.toString());
                             break;
                         }
-                        if (curr.rightEntry != null && delPoint.equals(curr.rightEntry.lowerBottom)) {
+                        if ((curr.rightEntry != null && delPoint.equals(curr.rightEntry.lowerBottom)) && curr.rightEntry.mark==false) {
                             //Point found
                             System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion: found point " + delPoint.toString());
                             foundPoint = true;
@@ -695,7 +703,7 @@ public class LockFreeRTree implements Runnable {
                     System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion: Parent null cas ");
                     restartDeletion = false;
                     return;
-                } else if (parent != null && isParentChildLinkLeft
+                } else if ((parent != null) && isParentChildLinkLeft
                         ? leftChildUpdater.compareAndSet(parent, curr, newNode)
                         : rightChildUpdater.compareAndSet(parent, curr, newNode)) {
                     System.out.println("Thread ID : " + Thread.currentThread().getId() + " Deletion: Parent not null CAS");
