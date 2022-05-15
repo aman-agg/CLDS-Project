@@ -360,6 +360,56 @@ public class SequentialRTree {
             }
         }
     }
+    public void rangeSearch(Point p1, Point p2){
+        Entry range = new Entry();
+        range.lowerBottom = p1;
+        range.upperTop = p2;
+        ArrayList<Point> rangePoints = new ArrayList<>();
+        Queue<Node> q = new LinkedList<>();
+        q.add(root);
+        int level = 0;
+        System.out.println("Level " + level);
+        while (q.size() != 0) {
+            Node curr = q.poll();
+            if(curr.leftEntry != null) {
+                if (curr.leftEntry.upperTop == null) {
+                    if (checkPointInMBR(range, curr.leftEntry.lowerBottom)) {
+                        rangePoints.add(curr.leftEntry.lowerBottom);
+                    }
+                } else {
+                    if (compareMBR(range, curr.leftEntry)) {
+                        q.add(curr.leftChild);
+                    }
+                }
+            }
+            if(curr.rightEntry != null) {
+                if (curr.rightEntry.upperTop == null) {
+                    if (checkPointInMBR(range, curr.rightEntry.lowerBottom)) {
+                        rangePoints.add(curr.rightEntry.lowerBottom);
+                    }
+                } else {
+                    if (compareMBR(range, curr.rightEntry)) {
+                        q.add(curr.rightChild);
+                    }
+                }
+            }
+        }
+        System.out.println("Range Points: ");
+        for(Point curr: rangePoints){
+            System.out.println(curr.x +" "+curr.y);
+        }
+        System.out.println();
+    }
+
+    private boolean compareMBR(Entry range, Entry rect) {
+        if(range.upperTop.getY() < rect.lowerBottom.getY() || range.lowerBottom.getY() > rect.upperTop.getY()){
+            return false;
+        }
+        if(range.upperTop.getX() < rect.lowerBottom.getX() || range.lowerBottom.getX() > rect.upperTop.getX()){
+            return false;
+        }
+        return true;
+    }
 
     public void delete(Point delPoint) {
         if (this.contains(delPoint) == false) {
