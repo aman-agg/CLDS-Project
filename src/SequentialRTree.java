@@ -8,14 +8,16 @@ import java.util.Random;
 
 class Entry {
     Point lowerBottom, upperTop;
-
+    boolean mark;   // true when addition is not yet fully complete otherwise false
     Entry() {
         lowerBottom = null;
         upperTop = null;
+        mark = false;
     }
     Entry(Entry e){
         this.lowerBottom = new Point(e.lowerBottom);
         this.upperTop = new Point(e.upperTop);
+        this.mark = e.mark;
     }
 
     public boolean isPoint() {

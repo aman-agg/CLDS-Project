@@ -89,8 +89,8 @@ public class Main {
     }
     public static void runLockFreeRTree(){
         //To run the Lock free Version of R tree
-        ExecutorService executorService = Executors.newFixedThreadPool(10);
-        for(int i = 0;i<10;i++){
+        ExecutorService executorService = Executors.newFixedThreadPool(11);
+        for(int i = 0;i<11;i++){
             executorService.submit(new LockFreeRTree());
         }
         executorService.shutdown();
