@@ -357,6 +357,8 @@ public class LockBasedRTree implements Runnable{
 //            System.out.println("Level " + level);
             while (q.size() != 0) {
                 Node curr = q.poll();
+                if(curr == null)
+                    continue;
                 if (curr.leftEntry != null) {
                     if (curr.leftEntry.upperTop == null) {
                         if (checkPointInMBR(range, curr.leftEntry.lowerBottom)) {

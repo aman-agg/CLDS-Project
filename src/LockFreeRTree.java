@@ -746,14 +746,87 @@ public class LockFreeRTree implements Runnable {
         }
         return true;
     }
+    public void rangeSearch(Point p1, Point p2){
+        try {
+            Entry range = new Entry();
+            range.lowerBottom = p1;
+            range.upperTop = p2;
+            HashSet<Point> prevScan = null;
+            boolean restartscan = true;
+            int count=0;
+            while (restartscan) {
+                count++;
+                if(count>20)
+                    break;
+                System.out.println("Range Search restarted");
+                HashSet<Point> currScan = new HashSet<>();
+                Queue<Node> q = new LinkedList<>();
+                q.add(root.get());
+                int level = 0;
+                System.out.println("Level " + level);
+                while (q.size() != 0) {
+                    Node curr = q.poll();
+                    if(curr == null)
+                        continue;
+                    if (curr.leftEntry != null) {
+                        if (curr.leftEntry.upperTop == null) {
+                            if (checkPointInMBR(range, curr.leftEntry.lowerBottom) && curr.leftEntry.mark == false) {
+                                currScan.add(curr.leftEntry.lowerBottom);
+                            }
+                        } else {
+                            if (compareMBR(range, curr.leftEntry)) {
+                                q.add(curr.leftChild);
+                            }
+                        }
+                    }
+                    if (curr.rightEntry != null) {
+                        if (curr.rightEntry.upperTop == null) {
+                            if (checkPointInMBR(range, curr.rightEntry.lowerBottom) && curr.rightEntry.mark == false) {
+                                currScan.add(curr.rightEntry.lowerBottom);
+                            }
+                        } else {
+                            if (compareMBR(range, curr.rightEntry)) {
+                                q.add(curr.rightChild);
+                            }
+                        }
+                    }
+                }
 
+                // compare the two sets
+                if (prevScan != null) {
+                    if (currScan.containsAll(prevScan) && prevScan.containsAll(currScan)) {
+                        System.out.println("Range Points: ");
+                        for (Point curr : currScan) {
+                            System.out.println("Range Point : "+ curr.x + " " + curr.y);
+                        }
+                        restartscan = false;
+                    }
+                }
+                prevScan = currScan;
+            }
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    private boolean compareMBR(Entry range, Entry rect) {
+        if(range.upperTop.getY() < rect.lowerBottom.getY() || range.lowerBottom.getY() > rect.upperTop.getY()){
+            return false;
+        }
+        if(range.upperTop.getX() < rect.lowerBottom.getX() || range.lowerBottom.getX() > rect.upperTop.getX()){
+            return false;
+        }
+        return true;
+    }
     @Override
     public void run() {
         //Different test cases
 //        int[] operations = {1,1,1,2,1,2,1,2};
 //        int[][] inputs = {{1,1},{2,2},{3,3},{2,2},{4,4},{2,2},{5,5},{3,3}};
-        int[] operations = {1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 6}; // for full leaf non root deletion
-        int[][] inputs = {{1, 1}, {3, 3}, {1, 2}, {2, 3}, {3, 1}, {2, 1}, {3, 3}, {1, 2}, {2, 3}, {3, 1}, {2, 1}, {1,1} };
+        int[] operations = {1, 7, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 6}; // for full leaf non root deletion
+        int[][] inputs = {{1, 1}, {1, 1, 3, 3}, {3, 3}, {1, 2}, {2, 3}, {3, 1}, {2, 1}, {3, 3}, {1, 2}, {2, 3}, {3, 1}, {2, 1}, {1,1} };
 //        int[] operations = {1,1,1,2,2,2,1};
 //        int[][] inputs = {{1,1},{2,2},{1,1},{2,2},{1,1},{2,2},{1,4}};
 //        int[] operations = {1,1,1,1,1,2,1};
@@ -806,17 +879,17 @@ public class LockFreeRTree implements Runnable {
 //                    }
 //                }
                 while (true) {
-                    if (atomicInteger.get() == 16) {
-                        prevAtomicValue = 16;
+                    if (atomicInteger.get() == 17) {
+                        prevAtomicValue = 17;
                         newAtomicValue = prevAtomicValue + 1;
                         if (atomicInteger.compareAndSet(prevAtomicValue, newAtomicValue)) {
-                            this.scan();
+//                            this.scan();
                             System.out.println("Thread ID: " + Thread.currentThread().getId() + " Completed Scan in Addition");
                             atomicInteger.compareAndSet(newAtomicValue, newAtomicValue + 1);
 //                            this.add(new Point(4,5));
                             break;
                         }
-                    } else if (atomicInteger.get() >= 18)
+                    } else if (atomicInteger.get() >= 19)
                         break;
                 }
 
@@ -836,7 +909,7 @@ public class LockFreeRTree implements Runnable {
 //                System.out.println("Thread ID : " + Thread.currentThread().getId() + " Atomic counter " + atomicInteger);
                 while (true) {
                     int curatomicvalue = atomicInteger.get();
-                    if (curatomicvalue >= 18) {
+                    if (curatomicvalue >= 19) {
                         newAtomicValue = curatomicvalue + 1;
                         if (atomicInteger.compareAndSet(curatomicvalue, newAtomicValue)) {
 //                            this.scan();
@@ -844,9 +917,9 @@ public class LockFreeRTree implements Runnable {
 //                            if(atomicInteger.get()==30)
                             System.out.println("Thread ID: " + Thread.currentThread().getId() + " Completed delete after additions and 1 scan");
                             atomicInteger.compareAndSet(atomicInteger.get(), atomicInteger.get() + 1);
-                            if (atomicInteger.get() == 28) {
+                            if (atomicInteger.get() == 29) {
                                 this.scan();
-                                atomicInteger.compareAndSet(28,29);
+                                atomicInteger.compareAndSet(29,30);
                             }
                             break;
                         }
@@ -882,7 +955,7 @@ public class LockFreeRTree implements Runnable {
 //                System.out.println("Thread ID : " + Thread.currentThread().getId() + " Atomic counter " + atomicInteger);
                 while (true) {
                     int curatomicvalue = atomicInteger.get();
-                    if (curatomicvalue == 29) {
+                    if (curatomicvalue == 30) {
                         newAtomicValue = curatomicvalue + 1;
                         if (atomicInteger.compareAndSet(curatomicvalue, newAtomicValue)) {
 //                            this.scan();
@@ -894,8 +967,31 @@ public class LockFreeRTree implements Runnable {
                         }
                     }
                 }
+            } else if (operation == 7) {
+                int x1 = inputs[opInd][0];
+                int y1 = inputs[opInd][1];
+                int x2 = inputs[opInd][2];
+                int y2 = inputs[opInd][3];
 
-            }else {
+                Point a = new Point(x1, y1);
+                Point b = new Point(x2, y2);
+//                System.out.println("Thread ID : "+ Thread.currentThread().getId()+ " Stage 1 Deletion: "+temp.toString());
+                //this.delete(temp);
+//                System.out.println("Thread ID: " + Thread.currentThread().getId() + " Completed Deletion");
+//                this.scan();
+//                int prev = atomicInteger.get();
+//                while (!atomicInteger.compareAndSet(prev, prev + 1)) {
+//                    prev = atomicInteger.get();
+//                }
+//                System.out.println("Thread ID : " + Thread.currentThread().getId() + " Atomic counter " + atomicInteger);
+                while (true) {
+                    int curatomicvalue = atomicInteger.get();
+                    if (curatomicvalue >= 16) {
+                        this.rangeSearch(a, b);
+                        break;
+                    }
+                }
+            } else {
                 System.out.println("Thread ID: " + Thread.currentThread().getId());
                 System.out.println("Incorrect input");
             }
