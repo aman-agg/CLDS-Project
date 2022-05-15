@@ -639,13 +639,13 @@ public class LockFreeRTree implements Runnable {
                             internal = true;
                     }
                     if (emptyLeaf || fullLeaf) {
-                        if (curr.leftEntry != null && delPoint.equals(curr.leftEntry.lowerBottom)) {
+                        if ((curr.leftEntry != null && delPoint.equals(curr.leftEntry.lowerBottom) && curr.leftEntry.mark==false)) {
                             //Point found
                             foundPoint = true;
                             System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion: found point " + delPoint.toString());
                             break;
                         }
-                        if (curr.rightEntry != null && delPoint.equals(curr.rightEntry.lowerBottom)) {
+                        if ((curr.rightEntry != null && delPoint.equals(curr.rightEntry.lowerBottom)) && curr.rightEntry.mark==false) {
                             //Point found
                             System.out.println("Thread Id : " + Thread.currentThread().getId() + " Deletion: found point " + delPoint.toString());
                             foundPoint = true;
